@@ -44,6 +44,7 @@
         <a href="{% url 'events:event_edit' slug=event.slug %}" class="btn">Edit Event</a>
         <a href="{% url 'events:track_create' event_slug=event.slug %}" class="btn">Add Track</a>
         <a href="{% url 'events:prize_create' event_slug=event.slug %}" class="btn">Add Prize</a>
+        <a href="{% url 'judging_web:progress_dashboard' slug=event.slug %}" class="btn">Judge Progress</a>
     </div>
     {% endif %}
 

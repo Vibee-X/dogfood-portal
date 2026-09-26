@@ -1,0 +1,20 @@
+<div class="card">
+    <table>
+        <thead>
+            <tr><th>Judge</th><th>Assigned</th><th>Completed</th><th>Remaining</th><th>Completion</th></tr>
+        </thead>
+        <tbody>
+            {% for item in progress %}
+            <tr>
+                <td>{{ item.judge }}</td>
+                <td>{{ item.assigned }}</td>
+                <td>{{ item.completed }}</td>
+                <td>{{ item.remaining }}</td>
+                <td>{{ item.completion_percentage }}%</td>
+            </tr>
+            {% empty %}
+            <tr><td colspan="5" class="text-muted">No active judges.</td></tr>
+            {% endfor %}
+        </tbody>
+    </table>
+</div>

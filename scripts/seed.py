@@ -37,8 +37,9 @@ from apps.teams.models import Team, TeamMembership
 from apps.submissions.models import Submission
 from apps.accounts.models import EventMembership
 from apps.judging.models import (
-    Rubric, RubricCriterion, JudgeAssignment, Score,
+    JudgeAssignment, JudgeTrack, NormalizationRun, Rubric, RubricCriterion, Score,
 )
+from apps.judging.services import run_normalization
 
 User = get_user_model()
 
@@ -151,6 +152,17 @@ def seed():
     judge_b_user = create_or_get_user("judge_b", "judge_b@example.org", "Judge B")
     ensure_membership(judge_b_user, event, EventMembership.Role.JUDGE)
 
+    # Fixture track scopes are authoritative. Named acceptance judges have no
+    # scope rows and therefore remain event-wide judges until an organizer
+    # invites them with explicit tracks.
+    JudgeTrack.objects.filter(event=event, judge__in=judge_map.values()).delete()
+    JudgeTrack.objects.bulk_create([
+        JudgeTrack(event=event, judge=judge_map[judge_id], track=track_map[track_id])
+        for judge_id, judge_data in ((judge["id"], judge) for judge in data["judges"])
+        for track_id in judge_data.get("tracks", [])
+        if track_id in track_map
+    ])
+
     # 5. Create team members and teams
     team_map = {}  # fixture_id -> Team object
     for t in data["teams"]:
@@ -253,6 +265,10 @@ def seed():
                 )
 
     print(f"[ok] Scores: {Score.objects.filter(assignment__event=event).count()} criterion values synchronized")
+
+    if not NormalizationRun.objects.filter(event=event).exists():
+        run_normalization(event)
+        print("[ok] Normalization: weighted z-score snapshot created")
 
     # 9. Generate tokens and print .dogfood.toml auth lines
     org_token = get_or_create_token(organizer)
