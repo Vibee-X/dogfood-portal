@@ -53,7 +53,7 @@ Update `.dogfood.toml` with the auth tokens from the seed output.
 - **Submissions**: Draft/edit until deadline, then submit. **Server-side deadline enforcement**.
 - **Public Gallery**: Search by title/tags, filter by track. Only submitted projects visible.
 - **Role Isolation**: All permission checks server-side (DRF permission_classes)
-- **Real Fixtures**: Seeded from the official fixtures.json with 40 projects, 30 judges, 8 tracks
+- **Real Fixtures**: Seeded from the official fixtures.json with 41 projects, 30 judges, 8 tracks
 
 ## Project Structure
 
