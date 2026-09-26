@@ -10,3 +10,12 @@ STORAGES = {
         "BACKEND": "django.contrib.staticfiles.storage.StaticFilesStorage",
     },
 }
+
+# WhiteNoise remains enabled in production. Test clients render templates but
+# do not need to serve static assets, so omit its middleware to avoid scanning
+# for an uncollected STATIC_ROOT during every test request.
+MIDDLEWARE = [
+    middleware
+    for middleware in MIDDLEWARE  # noqa: F405
+    if middleware != "whitenoise.middleware.WhiteNoiseMiddleware"
+]

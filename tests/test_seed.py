@@ -47,6 +47,7 @@ def test_seed_preserves_official_fixture_and_acceptance_accounts(capsys):
         user = User.objects.get(username=username)
         assert EventMembership.objects.get(user=user, event=event).role == role
         assert Token.objects.filter(user=user).exists()
+        assert user.check_password("dogfood2026")
 
     assert TeamMembership.objects.filter(
         team__event=event,
