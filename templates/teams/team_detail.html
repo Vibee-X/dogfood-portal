@@ -1,0 +1,35 @@
+{% extends "base.html" %}
+{% block title %}{{ team.name }} — Dogfood Portal{% endblock %}
+{% block content %}
+<div class="mt-3">
+    <h1>{{ team.name }}</h1>
+    <p class="text-muted">Event: {{ team.event.name }}</p>
+
+    <div class="card mt-2">
+        <h3>Members</h3>
+        <div class="mt-1">
+            {% for m in members %}
+            <p>{{ m.user.display_name|default:m.user.username }} — joined {{ m.joined_at|date:"M d, Y" }}</p>
+            {% endfor %}
+        </div>
+    </div>
+
+    {% if is_member %}
+    <div class="card mt-2">
+        <h3>Invite Links</h3>
+        {% for link in invite_links %}
+        <div class="mt-1">
+            <code>{{ request.scheme }}://{{ request.get_host }}/teams/join/{{ link.code }}/</code>
+            {% if not link.is_valid %}<span class="tag" style="background:rgba(239,68,68,0.2); color:var(--color-danger);">Expired</span>{% endif %}
+        </div>
+        {% empty %}
+        <p class="text-muted mt-1">No invite links yet.</p>
+        {% endfor %}
+        <div class="mt-2 flex gap-1">
+            <a href="{% url 'teams:generate_invite' pk=team.pk %}" class="btn btn-primary btn-sm">Generate Invite Link</a>
+            <a href="{% url 'teams:leave_team' pk=team.pk %}" class="btn btn-danger btn-sm" onclick="return confirm('Leave this team?')">Leave Team</a>
+        </div>
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

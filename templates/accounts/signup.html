@@ -1,0 +1,27 @@
+{% extends "base.html" %}
+{% block title %}Sign Up — Dogfood Portal{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <div class="card">
+        <h1>Sign Up</h1>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+                {% if field.errors %}
+                <div class="text-muted" style="color: var(--color-danger); font-size: 0.8rem;">
+                    {% for error in field.errors %}{{ error }}{% endfor %}
+                </div>
+                {% endif %}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Create Account</button>
+        </form>
+        <p class="text-center mt-2 text-muted">
+            Already have an account? <a href="{% url 'accounts:login' %}">Log in</a>
+        </p>
+    </div>
+</div>
+{% endblock %}

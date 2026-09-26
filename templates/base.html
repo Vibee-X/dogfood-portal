@@ -1,0 +1,48 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="Dogfood Portal — Hackathon Submission & Judging Platform">
+    <title>{% block title %}Dogfood Portal{% endblock %}</title>
+    <link rel="stylesheet" href="{% load static %}{% static 'css/style.css' %}">
+    <script src="{% static 'js/htmx.min.js' %}" defer></script>
+    <script src="{% static 'js/alpine.min.js' %}" defer></script>
+</head>
+<body>
+    <nav class="navbar">
+        <div class="container nav-container">
+            <a href="{% url 'submissions:gallery' %}" class="nav-brand">🐕 Dogfood Portal</a>
+            <div class="nav-links">
+                <a href="{% url 'submissions:gallery' %}">Gallery</a>
+                <a href="{% url 'events:event_list' %}">Events</a>
+                {% if user.is_authenticated %}
+                    <span class="nav-user">{{ user.display_name|default:user.username }}</span>
+                    <a href="{% url 'accounts:logout' %}" class="btn btn-sm">Logout</a>
+                {% else %}
+                    <a href="{% url 'accounts:login' %}" class="btn btn-sm">Login</a>
+                    <a href="{% url 'accounts:signup' %}" class="btn btn-sm btn-primary">Sign Up</a>
+                {% endif %}
+            </div>
+        </div>
+    </nav>
+
+    <main class="container">
+        {% if messages %}
+        <div class="messages">
+            {% for message in messages %}
+            <div class="alert alert-{{ message.tags }}">{{ message }}</div>
+            {% endfor %}
+        </div>
+        {% endif %}
+
+        {% block content %}{% endblock %}
+    </main>
+
+    <footer class="footer">
+        <div class="container">
+            <p>&copy; 2026 Dogfood Portal — Built for the Dogfood 72-Hour Hackathon</p>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,21 @@
+[portal]
+base_url = "http://localhost:8080"
+
+[tiers]
+claimed = ["T1"]
+pitch = "Self-hostable hackathon submission and judging platform with per-event roles, deadline enforcement, and public gallery."
+
+[auth]
+# These will be printed by the seed script on boot.
+# Replace with actual tokens from `docker compose up` output.
+organizer   = "Authorization: Token REPLACE_WITH_ORGANIZER_TOKEN"
+judge_a     = "Authorization: Token REPLACE_WITH_JUDGE_A_TOKEN"
+judge_b     = "Authorization: Token REPLACE_WITH_JUDGE_B_TOKEN"
+participant = "Authorization: Token REPLACE_WITH_PARTICIPANT_TOKEN"
+
+[routes]
+gallery      = "/projects/"
+submit       = "/projects/new"
+judge_scores = "/api/judge/scores"
+peer_scores  = "/api/judge/scores?judge=judge_a"
+csv_export   = "/api/export.csv"

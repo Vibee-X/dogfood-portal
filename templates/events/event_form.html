@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{% if editing %}Edit Event{% else %}Create Event{% endif %} — Dogfood Portal{% endblock %}
+{% block content %}
+<div class="auth-container" style="max-width: 640px;">
+    <div class="card">
+        <h1>{% if editing %}Edit Event{% else %}Create Event{% endif %}</h1>
+        <form method="post">
+            {% csrf_token %}
+            {% for field in form %}
+            <div class="form-group">
+                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
+                {{ field }}
+            </div>
+            {% endfor %}
+            <button type="submit" class="btn btn-primary">{% if editing %}Update{% else %}Create{% endif %}</button>
+        </form>
+    </div>
+</div>
+{% endblock %}

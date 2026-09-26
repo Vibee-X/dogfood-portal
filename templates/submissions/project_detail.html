@@ -1,0 +1,44 @@
+{% extends "base.html" %}
+{% block title %}{{ submission.title }} — Dogfood Portal{% endblock %}
+{% block content %}
+<div class="project-detail">
+    <a href="{% url 'submissions:gallery' %}" class="text-muted">&larr; Back to Gallery</a>
+    <h1 class="mt-2">{{ submission.title }}</h1>
+    <div class="meta">
+        Team: {{ submission.team.name }}
+        {% if submission.track %} · Track: {{ submission.track.name }}{% endif %}
+        {% if submission.submitted_at %} · Submitted {{ submission.submitted_at|date:"M d, Y H:i" }}{% endif %}
+    </div>
+
+    {% if submission.tagline %}
+    <p style="font-size: 1.1rem; color: var(--color-accent); margin-bottom: 1rem;">{{ submission.tagline }}</p>
+    {% endif %}
+
+    <div class="card mt-2">
+        <h3>Summary</h3>
+        <p class="description mt-1">{{ submission.summary }}</p>
+    </div>
+
+    {% if submission.description %}
+    <div class="card mt-2">
+        <h3>Description</h3>
+        <p class="description mt-1">{{ submission.description }}</p>
+    </div>
+    {% endif %}
+
+    <div class="card mt-2">
+        <h3>Links</h3>
+        <div class="mt-1">
+            {% if submission.repo_url %}
+            <a href="{{ submission.repo_url }}" class="btn btn-sm" target="_blank">Repository</a>
+            {% endif %}
+            {% if submission.live_url %}
+            <a href="{{ submission.live_url }}" class="btn btn-sm" target="_blank">Live Demo</a>
+            {% endif %}
+            {% if submission.demo_video_url %}
+            <a href="{{ submission.demo_video_url }}" class="btn btn-sm" target="_blank">Demo Video</a>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endblock %}

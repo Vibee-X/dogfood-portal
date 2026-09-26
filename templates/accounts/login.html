@@ -1,0 +1,24 @@
+{% extends "base.html" %}
+{% block title %}Login — Dogfood Portal{% endblock %}
+{% block content %}
+<div class="auth-container">
+    <div class="card">
+        <h1>Login</h1>
+        <form method="post">
+            {% csrf_token %}
+            <div class="form-group">
+                <label for="username">Username</label>
+                <input type="text" name="username" id="username" required autofocus>
+            </div>
+            <div class="form-group">
+                <label for="password">Password</label>
+                <input type="password" name="password" id="password" required>
+            </div>
+            <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Login</button>
+        </form>
+        <p class="text-center mt-2 text-muted">
+            No account? <a href="{% url 'accounts:signup' %}">Sign up</a>
+        </p>
+    </div>
+</div>
+{% endblock %}
