@@ -26,6 +26,10 @@ query parameter cannot widen a caller's event or role scope.
 | `/api/judging/progress` | `GET` | Organizer/admin of the requested event. |
 | `/api/judging/normalization/run` | `POST` | Organizer/admin of the requested event. |
 | `/api/export.csv` | `GET` | Organizer/admin of the requested event. |
+| `/api/judging/pairwise/generate` | `POST` | Organizer/admin; generates deterministic pairs only from current authorized judge assignments. |
+| `/api/judging/pairwise/next` | `GET` | Active judge; returns only the caller's next pending authorized pair. |
+| `/api/judging/pairwise/comparisons` | `GET`, `POST` | Judge reads/completes only own pairs; organizer/admin can inspect their event's pairs. |
+| `/api/judging/pairwise/rankings` | `GET` | Organizer/admin; component-scoped Bradley--Terry estimates. |
 
 Most judging endpoints accept `event=<event-slug>`; if absent they retain the
 existing single-event/first-event compatibility behavior. Score filters can

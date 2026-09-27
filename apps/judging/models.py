@@ -158,3 +158,139 @@ class NormalizationRun(models.Model):
 
     def __str__(self):
         return f"Normalization {self.method} @ {self.computed_at}"
+
+
+class PairwiseComparison(models.Model):
+    """One assigned judge's binary decision between two canonical submissions."""
+
+    event = models.ForeignKey(
+        "events.Event",
+        on_delete=models.CASCADE,
+        related_name="pairwise_comparisons",
+    )
+    judge = models.ForeignKey(
+        settings.AUTH_USER_MODEL,
+        on_delete=models.CASCADE,
+        related_name="pairwise_comparisons",
+    )
+    submission_a = models.ForeignKey(
+        "submissions.Submission",
+        on_delete=models.CASCADE,
+        related_name="pairwise_as_a",
+    )
+    submission_b = models.ForeignKey(
+        "submissions.Submission",
+        on_delete=models.CASCADE,
+        related_name="pairwise_as_b",
+    )
+    winner = models.ForeignKey(
+        "submissions.Submission",
+        on_delete=models.SET_NULL,
+        null=True,
+        blank=True,
+        related_name="pairwise_wins",
+    )
+    created_at = models.DateTimeField(auto_now_add=True)
+
+    class Meta:
+        constraints = [
+            models.UniqueConstraint(
+                fields=["judge", "submission_a", "submission_b"],
+                name="unique_pairwise_comparison_per_judge_pair",
+            ),
+            # Canonical ordering makes (A, B) and (B, A) the same stored pair,
+            # while also preventing comparisons of a submission with itself.
+            models.CheckConstraint(
+                condition=models.Q(submission_a__lt=models.F("submission_b")),
+                name="pairwise_submissions_are_canonical_and_distinct",
+            ),
+            models.CheckConstraint(
+                condition=(
+                    models.Q(winner__isnull=True)
+                    | models.Q(winner=models.F("submission_a"))
+                    | models.Q(winner=models.F("submission_b"))
+                ),
+                name="pairwise_winner_belongs_to_pair",
+            ),
+        ]
+        ordering = ["submission_a_id", "submission_b_id", "pk"]
+
+    def _canonicalize_pair(self):
+        if self.submission_a_id and self.submission_b_id and self.submission_a_id > self.submission_b_id:
+            submission_a = self.submission_a
+            self.submission_a = self.submission_b
+            self.submission_b = submission_a
+
+    def clean(self):
+        self._canonicalize_pair()
+        super().clean()
+        errors = {}
+        if not self.event_id:
+            errors["event"] = "An event is required."
+        if not self.judge_id:
+            errors["judge"] = "A judge is required."
+        if not self.submission_a_id or not self.submission_b_id:
+            errors["submission_a"] = "Two submissions are required."
+        elif self.submission_a_id == self.submission_b_id:
+            errors["submission_b"] = "A pair must contain two different submissions."
+        else:
+            if self.submission_a.event_id != self.event_id:
+                errors["submission_a"] = "Submission A must belong to the comparison event."
+            elif self.submission_a.status != "submitted":
+                errors["submission_a"] = "Submission A must be submitted."
+            if self.submission_b.event_id != self.event_id:
+                errors["submission_b"] = "Submission B must belong to the comparison event."
+            elif self.submission_b.status != "submitted":
+                errors["submission_b"] = "Submission B must be submitted."
+
+        if self.winner_id and self.winner_id not in {self.submission_a_id, self.submission_b_id}:
+            errors["winner"] = "The winner must be submission A or submission B."
+
+        if self.event_id and self.judge_id:
+            from apps.accounts.models import EventMembership
+
+            authorized_judge = EventMembership.objects.filter(
+                user_id=self.judge_id,
+                event_id=self.event_id,
+                role=EventMembership.Role.JUDGE,
+                status=EventMembership.Status.ACTIVE,
+            ).exists()
+            if not authorized_judge:
+                errors["judge"] = "The comparison judge must be an active event judge."
+
+        if self.event_id and self.judge_id and self.submission_a_id and self.submission_b_id:
+            assigned_ids = set(
+                JudgeAssignment.objects.filter(
+                    event_id=self.event_id,
+                    judge_id=self.judge_id,
+                    submission_id__in=[self.submission_a_id, self.submission_b_id],
+                ).values_list("submission_id", flat=True)
+            )
+            if self.submission_a_id not in assigned_ids:
+                errors["submission_a"] = "Submission A is not assigned to this judge."
+            if self.submission_b_id not in assigned_ids:
+                errors["submission_b"] = "Submission B is not assigned to this judge."
+            from apps.teams.models import TeamMembership
+
+            scoped_track_ids = set(
+                JudgeTrack.objects.filter(event_id=self.event_id, judge_id=self.judge_id)
+                .values_list("track_id", flat=True)
+            )
+            for label, submission in (("submission_a", self.submission_a), ("submission_b", self.submission_b)):
+                if TeamMembership.objects.filter(team=submission.team, user_id=self.judge_id).exists():
+                    errors[label] = "A judge cannot compare their own team's submission."
+                elif scoped_track_ids and submission.track_id not in scoped_track_ids:
+                    errors[label] = "Submission is outside this judge's permitted track scope."
+        if errors:
+            raise ValidationError(errors)
+
+    def save(self, *args, **kwargs):
+        # Normal saves enforce the event, authorization, and winner relationship;
+        # the database constraints remain the final duplicate/canonical guard.
+        self._canonicalize_pair()
+        self.full_clean(validate_constraints=False)
+        super().save(*args, **kwargs)
+
+    def __str__(self):
+        winner = self.winner_id or "pending"
+        return f"{self.judge}: {self.submission_a_id} vs {self.submission_b_id} ({winner})"

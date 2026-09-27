@@ -12,4 +12,8 @@ urlpatterns = [
     path("judging/assignments/generate", views.generate_judge_assignments, name="generate_assignments"),
     path("judging/progress", views.judge_progress_api, name="judge_progress"),
     path("judging/normalization/run", views.normalize_scores, name="normalize_scores"),
+    path("judging/pairwise/generate", views.generate_pairwise, name="generate_pairwise"),
+    path("judging/pairwise/next", views.next_pairwise, name="next_pairwise"),
+    path("judging/pairwise/comparisons", views.pairwise_comparisons, name="pairwise_comparisons"),
+    path("judging/pairwise/rankings", views.pairwise_rankings, name="pairwise_rankings"),
 ]

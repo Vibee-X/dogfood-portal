@@ -5,9 +5,9 @@ import json
 from collections import defaultdict
 
 from django.contrib.auth.decorators import login_required
-from django.http import HttpResponse, HttpResponseForbidden
+from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
 from django.shortcuts import get_object_or_404, render
-from django.views.decorators.http import require_GET
+from django.views.decorators.http import require_GET, require_http_methods
 from rest_framework import status as http_status
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
@@ -18,14 +18,29 @@ from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 from apps.accounts.models import EventMembership, User
 from apps.core.models import AuditLog
 from apps.events.models import Event, Track
-from .models import JudgeAssignment, JudgeTrack, NormalizationRun, Rubric, RubricCriterion, Score
+from .models import (
+    JudgeAssignment,
+    JudgeTrack,
+    NormalizationRun,
+    PairwiseComparison,
+    Rubric,
+    RubricCriterion,
+    Score,
+)
 from .services import (
     AssignmentError,
+    PairwisePermissionError,
+    PairwiseStateError,
+    PairwiseValidationError,
+    bradley_terry_ranking,
     event_role,
     generate_assignments,
+    generate_pairwise_comparisons,
     is_organizer,
     judge_can_review_submission,
     judge_progress,
+    next_pairwise_comparison,
+    record_pairwise_winner,
     run_normalization,
 )
 
@@ -74,6 +89,36 @@ def _serialize_assignment(assignment, *, include_judge=False):
     }
     if include_judge:
         payload["judge"] = assignment.judge.username
+    return payload
+
+
+def _serialize_pairwise_comparison(comparison, *, include_judge=False):
+    def serialize_submission(submission):
+        return {
+            "id": submission.pk,
+            "fixture_id": submission.fixture_id,
+            "title": submission.title,
+            "summary": submission.summary,
+            "description": submission.description,
+            "track": submission.track.name if submission.track else None,
+            "track_id": submission.track_id,
+            "repo_url": submission.repo_url,
+            "live_url": submission.live_url,
+            "demo_video_url": submission.demo_video_url,
+            "tech_tags": submission.tech_tags,
+        }
+
+    payload = {
+        "id": comparison.pk,
+        "event": comparison.event.slug,
+        "submission_a": serialize_submission(comparison.submission_a),
+        "submission_b": serialize_submission(comparison.submission_b),
+        "winner_id": comparison.winner_id,
+        "completed": comparison.winner_id is not None,
+        "created_at": comparison.created_at,
+    }
+    if include_judge:
+        payload["judge"] = comparison.judge.username
     return payload
 
 
@@ -431,6 +476,182 @@ def normalize_scores(request):
 
 
 @extend_schema(
+    tags=["Pairwise"],
+    summary="Generate deterministic judge comparison pairs",
+    description=(
+        "Organizer/admin only. Creates every missing canonical pair from each "
+        "judge's currently assigned, in-scope submitted projects; repeat calls "
+        "preserve completed decisions and create no duplicates."
+    ),
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
+@api_view(["POST"])
+@authentication_classes(AUTHENTICATION)
+@permission_classes([IsAuthenticated])
+def generate_pairwise(request):
+    event = _event_from_request(request, data=True)
+    denied = _organizer_response(request.user, event)
+    if denied:
+        return denied
+    try:
+        result = generate_pairwise_comparisons(event, actor=request.user)
+    except ValidationError as exc:
+        return Response(exc.message_dict, status=http_status.HTTP_400_BAD_REQUEST)
+    return Response({"event": event.slug, **result})
+
+
+@extend_schema(
+    tags=["Pairwise"],
+    summary="Get the next assigned pairwise comparison",
+    description=(
+        "Active judges only. The result is the caller's first pending, currently "
+        "authorized comparison in deterministic canonical-pair order."
+    ),
+    parameters=[OpenApiParameter("event", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False)],
+    responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
+@api_view(["GET"])
+@authentication_classes(AUTHENTICATION)
+@permission_classes([IsAuthenticated])
+def next_pairwise(request):
+    event = _event_from_request(request)
+    if not event:
+        return Response({"error": "Event not found."}, status=http_status.HTTP_404_NOT_FOUND)
+    try:
+        comparison = next_pairwise_comparison(event, request.user)
+    except PairwisePermissionError as exc:
+        return Response({"error": str(exc)}, status=http_status.HTTP_403_FORBIDDEN)
+    if not comparison:
+        return Response({"error": "No pending pairwise comparison is assigned."}, status=http_status.HTTP_404_NOT_FOUND)
+    return Response(_serialize_pairwise_comparison(comparison))
+
+
+@extend_schema(
+    methods=["GET"],
+    tags=["Pairwise"],
+    summary="List authorized pairwise comparisons",
+    description=(
+        "Judges can list only their own comparisons. Organizer/admin callers may "
+        "inspect comparisons in their event and optionally narrow by `judge`; a "
+        "judge cannot use that parameter to inspect a peer. Set `completed=1` to "
+        "return only completed comparisons."
+    ),
+    parameters=[
+        OpenApiParameter("event", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter("judge", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter("completed", OpenApiTypes.BOOL, OpenApiParameter.QUERY, required=False),
+    ],
+    responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
+@extend_schema(
+    methods=["POST"],
+    tags=["Pairwise"],
+    summary="Submit a pairwise winner",
+    description=(
+        "Active judges only. A caller may complete exactly one of their own pending "
+        "assigned pairs; `winner_id` must be submission A or B. The write is audit logged."
+    ),
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT, 409: OpenApiTypes.OBJECT},
+)
+@api_view(["GET", "POST"])
+@authentication_classes(AUTHENTICATION)
+@permission_classes([IsAuthenticated])
+def pairwise_comparisons(request):
+    if request.method == "GET":
+        event = _event_from_request(request)
+        if not event:
+            return Response({"error": "Event not found."}, status=http_status.HTTP_404_NOT_FOUND)
+        role = event_role(request.user, event)
+        requested_judge = request.query_params.get("judge")
+        queryset = PairwiseComparison.objects.filter(event=event).select_related(
+            "event", "judge", "submission_a__track", "submission_b__track"
+        )
+        if role in {EventMembership.Role.ORGANIZER, EventMembership.Role.ADMIN}:
+            if requested_judge:
+                queryset = queryset.filter(judge__username=requested_judge)
+            include_judge = True
+        elif role == EventMembership.Role.JUDGE:
+            if requested_judge and requested_judge != request.user.username:
+                return Response(
+                    {"error": "You cannot view another judge's comparisons."},
+                    status=http_status.HTTP_403_FORBIDDEN,
+                )
+            queryset = queryset.filter(judge=request.user)
+            include_judge = False
+        else:
+            return Response(
+                {"error": "Only judges and organizers can access pairwise comparisons."},
+                status=http_status.HTTP_403_FORBIDDEN,
+            )
+        if request.query_params.get("completed") in {"1", "true", "True"}:
+            queryset = queryset.filter(winner__isnull=False)
+        return Response({
+            "event": event.slug,
+            "comparisons": [
+                _serialize_pairwise_comparison(comparison, include_judge=include_judge)
+                for comparison in queryset.order_by("submission_a_id", "submission_b_id", "pk")
+            ],
+        })
+
+    event = _event_from_request(request, data=True)
+    if not event:
+        return Response({"error": "Event not found."}, status=http_status.HTTP_404_NOT_FOUND)
+    comparison_id = request.data.get("comparison_id")
+    winner_id = request.data.get("winner_id")
+    if not comparison_id or not winner_id:
+        return Response(
+            {"error": "comparison_id and winner_id are required."},
+            status=http_status.HTTP_400_BAD_REQUEST,
+        )
+    try:
+        winner_id = int(winner_id)
+    except (TypeError, ValueError):
+        return Response({"error": "comparison_id and winner_id must be integers."}, status=http_status.HTTP_400_BAD_REQUEST)
+    try:
+        comparison = record_pairwise_winner(
+            event,
+            request.user,
+            comparison_id,
+            winner_id,
+            actor=request.user,
+        )
+    except PairwisePermissionError as exc:
+        return Response({"error": str(exc)}, status=http_status.HTTP_403_FORBIDDEN)
+    except PairwiseStateError as exc:
+        return Response({"error": str(exc)}, status=http_status.HTTP_409_CONFLICT)
+    except PairwiseValidationError as exc:
+        return Response({"error": str(exc)}, status=http_status.HTTP_400_BAD_REQUEST)
+    return Response(_serialize_pairwise_comparison(comparison))
+
+
+@extend_schema(
+    tags=["Pairwise"],
+    summary="Read Bradley-Terry pairwise ranking",
+    description=(
+        "Organizer/admin only. Estimates strengths separately for each connected "
+        "comparison component; unconnected components and submissions with no "
+        "comparisons are explicitly not globally ranked."
+    ),
+    parameters=[OpenApiParameter("event", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False)],
+    responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
+@api_view(["GET"])
+@authentication_classes(AUTHENTICATION)
+@permission_classes([IsAuthenticated])
+def pairwise_rankings(request):
+    event = _event_from_request(request)
+    denied = _organizer_response(request.user, event)
+    if denied:
+        return denied
+    try:
+        return Response(bradley_terry_ranking(event))
+    except RuntimeError as exc:
+        return Response({"error": str(exc)}, status=http_status.HTTP_400_BAD_REQUEST)
+
+
+@extend_schema(
     tags=["Judging"],
     summary="Export event judging data as CSV",
     description="Organizer/admin only for the selected event. Includes submissions, raw scores, normalization values, and judge progress.",
@@ -494,3 +715,36 @@ def progress_dashboard(request, slug):
     if request.headers.get("HX-Request") == "true":
         return render(request, "judging/progress_table.html", context)
     return render(request, "judging/progress.html", context)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def pairwise_dashboard(request, slug):
+    """Server-rendered, HTMX-enhanced judge workflow for assigned pairs."""
+    event = get_object_or_404(Event, slug=slug)
+    if event_role(request.user, event) != EventMembership.Role.JUDGE:
+        return HttpResponseForbidden("Active judge access is required.")
+
+    if request.method == "POST":
+        comparison_id = request.POST.get("comparison_id")
+        winner_id = request.POST.get("winner_id")
+        try:
+            winner_id = int(winner_id)
+        except (TypeError, ValueError):
+            return HttpResponseBadRequest("winner_id must be an integer.")
+        try:
+            record_pairwise_winner(event, request.user, comparison_id, winner_id, actor=request.user)
+        except PairwisePermissionError as exc:
+            return HttpResponseForbidden(str(exc))
+        except PairwiseStateError as exc:
+            return HttpResponseBadRequest(str(exc))
+        except PairwiseValidationError as exc:
+            return HttpResponseBadRequest(str(exc))
+        if request.headers.get("HX-Request") != "true":
+            return redirect("judging_web:pairwise_dashboard", slug=event.slug)
+
+    comparison = next_pairwise_comparison(event, request.user)
+    context = {"event": event, "comparison": comparison}
+    if request.headers.get("HX-Request") == "true":
+        return render(request, "judging/pairwise_content.html", context)
+    return render(request, "judging/pairwise.html", context)

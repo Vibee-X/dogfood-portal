@@ -1,0 +1,48 @@
+{% if comparison %}
+<div class="pairwise-layout">
+    <article class="card pairwise-project">
+        <p class="pairwise-label">Project A</p>
+        <h2 class="card-title">{{ comparison.submission_a.title }}</h2>
+        {% if comparison.submission_a.track %}<p class="card-meta">{{ comparison.submission_a.track.name }}</p>{% endif %}
+        {% if comparison.submission_a.summary %}<p class="mt-1">{{ comparison.submission_a.summary }}</p>{% endif %}
+        {% if comparison.submission_a.description %}<p class="text-muted mt-1">{{ comparison.submission_a.description|truncatewords:55 }}</p>{% endif %}
+        {% for tag in comparison.submission_a.tech_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+        <div class="mt-2">
+            {% if comparison.submission_a.repo_url %}<a href="{{ comparison.submission_a.repo_url }}" rel="noopener" target="_blank">Repository</a>{% endif %}
+            {% if comparison.submission_a.live_url %}<a href="{{ comparison.submission_a.live_url }}" rel="noopener" target="_blank">Live demo</a>{% endif %}
+        </div>
+    </article>
+
+    <div class="pairwise-versus" aria-label="versus">VS</div>
+
+    <article class="card pairwise-project">
+        <p class="pairwise-label">Project B</p>
+        <h2 class="card-title">{{ comparison.submission_b.title }}</h2>
+        {% if comparison.submission_b.track %}<p class="card-meta">{{ comparison.submission_b.track.name }}</p>{% endif %}
+        {% if comparison.submission_b.summary %}<p class="mt-1">{{ comparison.submission_b.summary }}</p>{% endif %}
+        {% if comparison.submission_b.description %}<p class="text-muted mt-1">{{ comparison.submission_b.description|truncatewords:55 }}</p>{% endif %}
+        {% for tag in comparison.submission_b.tech_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
+        <div class="mt-2">
+            {% if comparison.submission_b.repo_url %}<a href="{{ comparison.submission_b.repo_url }}" rel="noopener" target="_blank">Repository</a>{% endif %}
+            {% if comparison.submission_b.live_url %}<a href="{{ comparison.submission_b.live_url }}" rel="noopener" target="_blank">Live demo</a>{% endif %}
+        </div>
+    </article>
+</div>
+
+<form method="post"
+      action="{% url 'judging_web:pairwise_dashboard' slug=event.slug %}"
+      hx-post="{% url 'judging_web:pairwise_dashboard' slug=event.slug %}"
+      hx-target="#pairwise-comparison"
+      hx-swap="innerHTML"
+      class="pairwise-choices mt-2">
+    {% csrf_token %}
+    <input type="hidden" name="comparison_id" value="{{ comparison.pk }}">
+    <button class="btn btn-primary btn-lg" type="submit" name="winner_id" value="{{ comparison.submission_a_id }}">Choose A</button>
+    <button class="btn btn-success btn-lg" type="submit" name="winner_id" value="{{ comparison.submission_b_id }}">Choose B</button>
+</form>
+{% else %}
+<div class="card text-center pairwise-complete">
+    <h2 class="card-title">All assigned comparisons are complete</h2>
+    <p class="text-muted">There are no remaining authorized project pairs for this event.</p>
+</div>
+{% endif %}

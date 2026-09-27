@@ -19,6 +19,16 @@ The normalization snapshot is deliberately stored rather than recalculated for
 an export: it records the raw values, criteria configuration, judge statistics,
 fallback use, and project aggregates needed to reproduce the result later.
 
+Pairwise mode remains inside `apps.judging` and reuses existing
+`JudgeAssignment` authorization rather than creating a parallel permission
+system. The service layer builds canonical, deterministic pairs only from a
+judge's active in-scope assignments, and the model validates the same
+relationship on normal saves. API and server-rendered HTMX workflow writes pass
+through the shared completion service, which makes the decision immutable and
+adds an audit row. Bradley--Terry estimation uses SciPy in connected components
+with a per-component anchor, so disconnected graphs and projects lacking
+comparisons are represented explicitly rather than given invented global ranks.
+
 T3 is isolated in `apps.voting`. Its DRF endpoints enforce the event's voting
 window and configured access policy before returning a per-ballot deterministic
 shuffle of submitted projects or accepting a vote. The ballot identity is an

@@ -23,6 +23,12 @@
   value to be in the criterion's `1..max_score` range.
 - `judging.NormalizationRun`: immutable method, timestamp, and JSON snapshot
   containing all weighted z-score inputs and outputs.
+- `judging.PairwiseComparison`: event-scoped judge assignment pair with two
+  canonical ordered submissions, an optional winner, and timestamp. Database
+  constraints require `submission_a < submission_b`, one pair per judge and
+  submission pair, and a winner that is one of the two submissions. Model
+  validation also requires an active judge and valid `JudgeAssignment` records
+  for both submissions.
 - `core.AuditLog`: score writes record actor, operation, target, and old/new
   value metadata.
 
@@ -47,4 +53,5 @@ same opaque voter reference.
 
 `scripts/seed.py` imports the official fixture IDs without collapsing duplicate
 team names or projects. `/api/export.csv` is an organizer/admin export with
-submission, score, normalization, and progress columns.
+submission, score, normalization, and progress columns. Pairwise rankings are
+available from the organizer/admin-only `/api/judging/pairwise/rankings` API.
