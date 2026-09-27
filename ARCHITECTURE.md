@@ -4,6 +4,25 @@ Dogfood Portal is a Django 5 server-rendered application with Django REST
 Framework APIs, PostgreSQL in Compose, and HTMX/Alpine static assets served by
 WhiteNoise. There is no CDN or client-side build step.
 
+## Design and application boundaries
+
+Django owns the browser workflow, templates, migrations, and relational
+integrity. DRF is used where token-authenticated clients need a stable JSON or
+CSV interface; it is not a second permission system. HTMX adds small partial
+updates (the progress and pairwise views) without moving business rules into a
+JavaScript application. This combination keeps authorization, deadline checks,
+and validation at the server boundary while retaining a simple deployment with
+no Node build step.
+
+`apps.accounts` holds users and event-scoped memberships; `apps.events` holds
+event configuration, tracks, and prizes; `apps.teams` owns teams and invite
+links; and `apps.submissions` owns projects and the public gallery.
+`apps.judging` owns rubric scoring, normalization, assignments, and pairwise
+comparisons. `apps.voting` owns community ballots and comments. `apps.core`
+holds cross-cutting audit records and certificates. URL composition keeps web
+flows and `/api/` routes distinct while each view evaluates the same
+event-scoped membership data.
+
 T1 owns account, event, team, submission, and gallery boundaries. T2 is
 isolated in `apps.judging`: models hold rubric, scope, assignment, score, and
 normalization data; `services.py` owns deterministic assignment and math; and
@@ -41,3 +60,13 @@ Comment reads expose only unhidden comments to the gallery. Posting requires an
 active event membership, edits require comment ownership, and hiding/unhiding
 requires organizer/admin membership. These checks are all in API views, so a
 request parameter or hidden UI control cannot grant access.
+
+## Self-hosted and offline runtime
+
+Compose runs PostgreSQL and Gunicorn locally. Its entrypoint applies committed
+migrations, collects local static assets, seeds the bundled fixture, and binds
+Gunicorn to port 8080; it never runs `makemigrations`. Runtime code does not
+call a hosted database, external API, CDN, or external authentication service.
+For an air-gapped first build, the Python base image and Python dependency
+wheels must be supplied from a local cache or registry; that bootstrap
+requirement is separate from the portal's runtime dependencies.
