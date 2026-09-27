@@ -32,6 +32,11 @@ write creates `AuditLog` entry `score.created` or `score.updated`.
 
 ## Normalization
 
+`NormalizationRun` is a reproducibility record, not a second scoring system.
+Each saved `weighted-zscore-v1` snapshot preserves the active criteria, entered
+criterion values, observed weights, raw review score, per-judge statistics,
+normalized review score, and project means used for that run.
+
 For each review, the raw weighted score uses only criteria actually entered:
 
 `r = sum(w_c * value_c / max_c) / sum(w_c)`.
@@ -46,6 +51,35 @@ omitted rather than treated as zero. If a judge has fewer than two scored
 reviews, or rates every review identically (`stddev = 0`), every one of that
 judge's z-scores is defined as `0`. This avoids division by zero and ensures a
 constant scorer supplies no artificial ranking signal.
+
+### Reproducible local snapshot example
+
+The local run exercised by
+`tests/test_t2.py::test_normalization_handles_weights_incomplete_reviews_and_zero_variance`
+uses these two active criteria:
+
+| Criterion | Weight | Maximum |
+| --- | ---: | ---: |
+| Quality | 2 | 5 |
+| Impact | 3 | 10 |
+
+The variable-scale judge gave one project `Quality=5, Impact=10`, producing
+`r = (2 * 5/5 + 3 * 10/10) / (2 + 3) = 1.0`. For another project the same
+judge gave `Quality=1, Impact=2`, producing
+`r = (2 * 1/5 + 3 * 2/10) / 5 = 0.2`. The stored snapshot statistics for that
+judge are mean `0.6` and population standard deviation `0.4`, so the stored
+normalized scores are `(1.0 - 0.6) / 0.4 = +1.0` and
+`(0.2 - 0.6) / 0.4 = -1.0`. With one included review per project, their
+project `normalized_mean` values are respectively `+1.0` and `-1.0`.
+
+The same local run includes a partial review with only `Quality=5`. Its
+observed weight is `2`, so its raw score is `2 * 5/5 / 2 = 1.0`; the missing
+Impact value is not zero-filled. That judge has only one scored review, so the
+snapshot records `fallback: "zero_variance"` and stores its normalized score
+as `0.0`. A separate assignment with no entered criterion is stored with
+`included: false` and contributes to neither judge statistics nor project
+means. The test recomputes the documented mean, population standard deviation,
+and z-scores from the persisted snapshot values.
 
 `POST /api/judging/normalization/run` stores the criteria, raw criterion values,
 weights, per-judge statistics, each normalized review, and project aggregates

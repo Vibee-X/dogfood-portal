@@ -293,6 +293,22 @@ def test_normalization_handles_weights_incomplete_reviews_and_zero_variance(t2_c
     assert records[partial.pk]["raw_weighted_score"] == pytest.approx(1.0)
     assert records[partial.pk]["normalized_score"] == 0.0
     assert records[empty.pk]["included"] is False
+    variable_statistics = run.snapshot["judge_statistics"][str(judge_variable.pk)]
+    variable_raw_scores = [records[high.pk]["raw_weighted_score"], records[low.pk]["raw_weighted_score"]]
+    reproducible_mean = sum(variable_raw_scores) / len(variable_raw_scores)
+    reproducible_population_stddev = math.sqrt(
+        sum((score - reproducible_mean) ** 2 for score in variable_raw_scores) / len(variable_raw_scores)
+    )
+    assert variable_statistics["mean"] == pytest.approx(0.6)
+    assert variable_statistics["population_stddev"] == pytest.approx(0.4)
+    assert variable_statistics["mean"] == pytest.approx(reproducible_mean)
+    assert variable_statistics["population_stddev"] == pytest.approx(reproducible_population_stddev)
+    assert records[high.pk]["normalized_score"] == pytest.approx(
+        (records[high.pk]["raw_weighted_score"] - reproducible_mean) / reproducible_population_stddev
+    )
+    assert records[low.pk]["normalized_score"] == pytest.approx(
+        (records[low.pk]["raw_weighted_score"] - reproducible_mean) / reproducible_population_stddev
+    )
     assert run.snapshot["judge_statistics"][str(judge_constant.pk)]["fallback"] == "zero_variance"
     assert all(
         math.isfinite(record["normalized_score"])

@@ -43,6 +43,12 @@ python3 run.py .dogfood.toml
 
 Update `.dogfood.toml` with the auth tokens from the seed output.
 
+## API documentation
+
+The generated OpenAPI 3 document is available at `/api/schema/` (JSON:
+`/api/schema/?format=json`). See [API.md](API.md) for the implemented endpoint
+surface, token header, and server-enforced role restrictions.
+
 ## Features (T1 Core)
 
 - **Authentication**: Signup, login, logout (session-based for browsers, token-based for API)

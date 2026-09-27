@@ -31,6 +31,7 @@ INSTALLED_APPS = [
     # Third party
     "rest_framework",
     "rest_framework.authtoken",
+    "drf_spectacular",
     # Local apps
     "apps.core",
     "apps.accounts",
@@ -116,6 +117,23 @@ REST_FRAMEWORK = {
     "DEFAULT_PERMISSION_CLASSES": [
         "rest_framework.permissions.IsAuthenticatedOrReadOnly",
     ],
+    "DEFAULT_SCHEMA_CLASS": "drf_spectacular.openapi.AutoSchema",
+}
+
+# OpenAPI describes DRF endpoints. Browser forms remain server-rendered Django
+# views, except /projects/new which is a token-authenticated acceptance API.
+SPECTACULAR_SETTINGS = {
+    "TITLE": "Dogfood Portal API",
+    "DESCRIPTION": (
+        "The token-authenticated API for Dogfood Portal judging, community "
+        "voting, comments, and the acceptance submission endpoint. Send "
+        "`Authorization: Token <key>` where an endpoint requires authentication. "
+        "Event roles are enforced server-side; endpoint descriptions name the "
+        "roles allowed to read or write each resource."
+    ),
+    "VERSION": "1.0.0",
+    "SERVE_INCLUDE_SCHEMA": False,
+    "COMPONENT_SPLIT_REQUEST": True,
 }
 
 # Login/Logout redirects

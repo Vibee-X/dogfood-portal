@@ -11,6 +11,7 @@ from rest_framework.authentication import TokenAuthentication, SessionAuthentica
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
 from rest_framework import status
+from drf_spectacular.utils import OpenApiTypes, extend_schema
 
 from .models import Submission
 from .forms import SubmissionForm
@@ -136,6 +137,16 @@ def submission_edit(request, pk):
     })
 
 
+@extend_schema(
+    tags=["Submissions"],
+    summary="Submit a project",
+    description=(
+        "Requires TokenAuthentication and a team membership in the first event. "
+        "The server rejects writes after the event submission deadline."
+    ),
+    request=OpenApiTypes.OBJECT,
+    responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT},
+)
 @api_view(["POST"])
 @authentication_classes([TokenAuthentication, SessionAuthentication])
 @permission_classes([IsAuthenticated])

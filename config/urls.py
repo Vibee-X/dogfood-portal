@@ -1,6 +1,7 @@
 """URL configuration for Dogfood Portal."""
 from django.contrib import admin
 from django.urls import path, include
+from drf_spectacular.views import SpectacularAPIView
 
 urlpatterns = [
     path("admin/", admin.site.urls),
@@ -9,6 +10,7 @@ urlpatterns = [
     path("events/", include("apps.judging.web_urls")),
     path("teams/", include("apps.teams.urls")),
     path("projects/", include("apps.submissions.urls")),
+    path("api/schema/", SpectacularAPIView.as_view(), name="api-schema"),
     path("api/", include("apps.judging.urls")),
     path("api/", include("apps.voting.urls")),
     path("", include("apps.core.urls")),

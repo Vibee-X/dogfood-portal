@@ -13,6 +13,7 @@ from rest_framework.authentication import SessionAuthentication, TokenAuthentica
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import IsAuthenticated
 from rest_framework.response import Response
+from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 
 from apps.accounts.models import EventMembership, User
 from apps.core.models import AuditLog
@@ -76,6 +77,35 @@ def _serialize_assignment(assignment, *, include_judge=False):
     return payload
 
 
+@extend_schema(
+    methods=["GET"],
+    tags=["Judging"],
+    summary="Read authorized scores",
+    description=(
+        "Requires TokenAuthentication. Judges receive only their own assignments; "
+        "organizers/admins may read scores in their event. Participants and peer "
+        "judge reads are denied server-side."
+    ),
+    parameters=[
+        OpenApiParameter("event", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter("judge", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter("assignment", OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+        OpenApiParameter("track", OpenApiTypes.INT, OpenApiParameter.QUERY, required=False),
+    ],
+    responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
+@extend_schema(
+    methods=["POST", "PUT", "PATCH"],
+    tags=["Judging"],
+    summary="Create or update an assigned score",
+    description=(
+        "Requires TokenAuthentication and ownership of the assignment. The server "
+        "validates judge, track, rubric, criterion, and event relationships and "
+        "writes an audit record."
+    ),
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["GET", "POST", "PUT", "PATCH"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([IsAuthenticated])
@@ -196,6 +226,22 @@ def judge_scores(request):
     )
 
 
+@extend_schema(
+    methods=["GET"],
+    tags=["Judging"],
+    summary="List event rubrics",
+    description="Organizer/admin only for the selected event.",
+    parameters=[OpenApiParameter("event", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False)],
+    responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
+@extend_schema(
+    methods=["POST"],
+    tags=["Judging"],
+    summary="Create an event rubric",
+    description="Organizer/admin only for the selected event.",
+    request=OpenApiTypes.OBJECT,
+    responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["GET", "POST"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([IsAuthenticated])
@@ -235,6 +281,22 @@ def rubrics(request):
     return Response({"id": rubric.pk, "name": rubric.name}, status=http_status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    methods=["POST"],
+    tags=["Judging"],
+    summary="Add a rubric criterion",
+    description="Organizer/admin only for the rubric's event. Weight and maximum score must be positive.",
+    request=OpenApiTypes.OBJECT,
+    responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
+@extend_schema(
+    methods=["PATCH"],
+    tags=["Judging"],
+    summary="Update a rubric criterion",
+    description="Organizer/admin only for the rubric's event; `criterion_id` must belong to this rubric.",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["POST", "PATCH"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([IsAuthenticated])
@@ -262,6 +324,13 @@ def rubric_criteria(request, rubric_id):
     )
 
 
+@extend_schema(
+    tags=["Judging"],
+    summary="Invite or scope a judge",
+    description="Organizer/admin only. Replaces this judge's event track scopes with the supplied event track IDs.",
+    request=OpenApiTypes.OBJECT,
+    responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["POST"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([IsAuthenticated])
@@ -302,6 +371,13 @@ def invite_judge(request):
     }, status=http_status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["Judging"],
+    summary="Generate judge assignments",
+    description="Organizer/admin only. Produces deterministic, idempotent, track-scoped assignments for submitted projects.",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["POST"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([IsAuthenticated])
@@ -317,6 +393,13 @@ def generate_judge_assignments(request):
     return Response({"event": event.slug, **result})
 
 
+@extend_schema(
+    tags=["Judging"],
+    summary="Read judge progress",
+    description="Organizer/admin only for the selected event.",
+    parameters=[OpenApiParameter("event", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False)],
+    responses={200: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["GET"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([IsAuthenticated])
@@ -328,6 +411,13 @@ def judge_progress_api(request):
     return Response({"event": event.slug, "judges": judge_progress(event)})
 
 
+@extend_schema(
+    tags=["Judging"],
+    summary="Persist a normalization snapshot",
+    description="Organizer/admin only. Creates a weighted z-score NormalizationRun snapshot for the selected event.",
+    request=OpenApiTypes.OBJECT,
+    responses={201: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["POST"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([IsAuthenticated])
@@ -340,6 +430,13 @@ def normalize_scores(request):
     return Response({"id": run.pk, "event": event.slug, "method": run.method}, status=http_status.HTTP_201_CREATED)
 
 
+@extend_schema(
+    tags=["Judging"],
+    summary="Export event judging data as CSV",
+    description="Organizer/admin only for the selected event. Includes submissions, raw scores, normalization values, and judge progress.",
+    parameters=[OpenApiParameter("event", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False)],
+    responses={200: OpenApiTypes.STR, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["GET"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([IsAuthenticated])

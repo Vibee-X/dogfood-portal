@@ -14,6 +14,7 @@ from rest_framework.authentication import SessionAuthentication, TokenAuthentica
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.permissions import AllowAny
 from rest_framework.response import Response
+from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 
 from apps.accounts.models import EventMembership
 from apps.core.models import AuditLog
@@ -150,6 +151,17 @@ def _vote_preconditions(request, event):
     return None
 
 
+@extend_schema(
+    tags=["Voting"],
+    summary="Get a randomized community ballot",
+    description=(
+        "Available only for a published event with an open voting window and the "
+        "event's configured public, authenticated, or participant access policy. "
+        "A browser ballot identity determines the stable randomized project order."
+    ),
+    parameters=[OpenApiParameter("event", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False)],
+    responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["GET"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([AllowAny])
@@ -176,6 +188,17 @@ def ballot(request):
     return _apply_ballot_cookie(response, cookie)
 
 
+@extend_schema(
+    tags=["Voting"],
+    summary="Cast a community vote",
+    description=(
+        "Requires the same active ballot conditions as the ballot endpoint. Only "
+        "submitted projects are eligible. Duplicate votes are blocked by a database "
+        "constraint and repeated attempts are rate limited."
+    ),
+    request=OpenApiTypes.OBJECT,
+    responses={201: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT, 409: OpenApiTypes.OBJECT, 429: OpenApiTypes.OBJECT},
+)
 @api_view(["POST"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([AllowAny])
@@ -227,6 +250,16 @@ def cast_vote(request):
     ), cookie)
 
 
+@extend_schema(
+    tags=["Voting"],
+    summary="Read community voting results",
+    description=(
+        "Organizer/admin callers may inspect results during voting. Other callers can "
+        "read results only after the configured voting window ends."
+    ),
+    parameters=[OpenApiParameter("event", OpenApiTypes.STR, OpenApiParameter.QUERY, required=False)],
+    responses={200: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["GET"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([AllowAny])
@@ -273,6 +306,26 @@ def _comment_body(data):
     return body.strip() if isinstance(body, str) else None
 
 
+@extend_schema(
+    methods=["GET"],
+    tags=["Comments"],
+    summary="List visible project comments",
+    description=(
+        "Public readers receive only visible comments on submitted projects in "
+        "published events. Organizer/admin callers may add `include_hidden=1` to "
+        "inspect hidden comments."
+    ),
+    parameters=[OpenApiParameter("include_hidden", OpenApiTypes.BOOL, OpenApiParameter.QUERY, required=False)],
+    responses={200: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
+@extend_schema(
+    methods=["POST"],
+    tags=["Comments"],
+    summary="Create a project comment",
+    description="Requires TokenAuthentication and active membership in the submission's event.",
+    request=OpenApiTypes.OBJECT,
+    responses={201: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["GET", "POST"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([AllowAny])
@@ -326,6 +379,13 @@ def comments(request, submission_id):
     )
 
 
+@extend_schema(
+    tags=["Comments"],
+    summary="Edit a comment",
+    description="Requires TokenAuthentication. Only the comment's author may edit its body.",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["PATCH"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([AllowAny])
@@ -354,6 +414,13 @@ def edit_comment(request, comment_id):
     return Response({"id": comment.pk, "body": comment.body})
 
 
+@extend_schema(
+    tags=["Comments"],
+    summary="Hide or unhide a comment",
+    description="Requires TokenAuthentication and organizer/admin membership in the comment's event.",
+    request=OpenApiTypes.OBJECT,
+    responses={200: OpenApiTypes.OBJECT, 400: OpenApiTypes.OBJECT, 401: OpenApiTypes.OBJECT, 403: OpenApiTypes.OBJECT, 404: OpenApiTypes.OBJECT},
+)
 @api_view(["POST"])
 @authentication_classes(AUTHENTICATION)
 @permission_classes([AllowAny])
