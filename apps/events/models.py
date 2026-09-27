@@ -5,6 +5,12 @@ from django.utils.text import slugify
 
 class Event(models.Model):
     """A hackathon event with configurable dates."""
+
+    class VotingAccess(models.TextChoices):
+        PUBLIC = "public", "Public visitors"
+        AUTHENTICATED = "authenticated", "Authenticated users"
+        PARTICIPANTS = "participants", "Event participants"
+
     name = models.CharField(max_length=255)
     slug = models.SlugField(max_length=255, unique=True)
     description = models.TextField(blank=True, default="")
@@ -15,6 +21,11 @@ class Event(models.Model):
     judging_end = models.DateTimeField(null=True, blank=True)
     voting_start = models.DateTimeField(null=True, blank=True)
     voting_end = models.DateTimeField(null=True, blank=True)
+    voting_access = models.CharField(
+        max_length=20,
+        choices=VotingAccess.choices,
+        default=VotingAccess.PARTICIPANTS,
+    )
     is_published = models.BooleanField(default=False)
     created_by = models.ForeignKey(
         settings.AUTH_USER_MODEL,

@@ -18,3 +18,16 @@ and criterion/event consistency. Every successful write creates an audit row.
 The normalization snapshot is deliberately stored rather than recalculated for
 an export: it records the raw values, criteria configuration, judge statistics,
 fallback use, and project aggregates needed to reproduce the result later.
+
+T3 is isolated in `apps.voting`. Its DRF endpoints enforce the event's voting
+window and configured access policy before returning a per-ballot deterministic
+shuffle of submitted projects or accepting a vote. The ballot identity is an
+authenticated account identity or a server-signed anonymous cookie; the
+database uniqueness constraint and cache-backed attempt limiter use that same
+identity. Active voting totals are returned only to the event organizer/admin;
+the public results endpoint opens after the voting window closes.
+
+Comment reads expose only unhidden comments to the gallery. Posting requires an
+active event membership, edits require comment ownership, and hiding/unhiding
+requires organizer/admin membership. These checks are all in API views, so a
+request parameter or hidden UI control cannot grant access.

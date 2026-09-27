@@ -55,6 +55,7 @@ def project_detail(request, pk):
     )
     return render(request, "submissions/project_detail.html", {
         "submission": submission,
+        "comments": submission.comments.filter(is_hidden=False).select_related("user"),
     })
 
 

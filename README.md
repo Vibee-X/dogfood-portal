@@ -55,6 +55,17 @@ Update `.dogfood.toml` with the auth tokens from the seed output.
 - **Role Isolation**: All permission checks server-side (DRF permission_classes)
 - **Real Fixtures**: Seeded from the official fixtures.json with 41 projects, 30 judges, 8 tracks
 
+## Features (T2 and T3)
+
+- **Judging integrity**: Event rubrics, scoped judge assignments, own-score
+  isolation, audit logging, normalization snapshots, and organizer CSV export.
+- **Community voting**: Per-event public/authenticated/participant access,
+  configured voting windows, stable randomized ballot order, duplicate-vote
+  database protection, and rate-limited vote attempts.
+- **Comments**: Active event members can comment on submitted public projects;
+  authors can edit their own comments and organizer/admin moderators can
+  hide or unhide them.
+
 ## Project Structure
 
 ```

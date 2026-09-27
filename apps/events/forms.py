@@ -8,7 +8,7 @@ class EventForm(forms.ModelForm):
         fields = [
             "name", "slug", "description", "start_date", "end_date",
             "submission_deadline", "judging_start", "judging_end",
-            "voting_start", "voting_end", "is_published", "reviews_per_submission",
+            "voting_start", "voting_end", "voting_access", "is_published", "reviews_per_submission",
         ]
         widgets = {
             "start_date": forms.DateTimeInput(attrs={"type": "datetime-local"}),

@@ -40,5 +40,21 @@
             {% endif %}
         </div>
     </div>
+
+    <div class="card mt-2">
+        <h3>Community comments</h3>
+        {% for comment in comments %}
+        <div class="mt-1">
+            <strong>{{ comment.user.display_name|default:comment.user.username }}</strong>
+            <span class="text-muted">· {{ comment.created_at|date:"M d, Y H:i" }}</span>
+            <p>{{ comment.body }}</p>
+        </div>
+        {% empty %}
+        <p class="text-muted">No public comments yet.</p>
+        {% endfor %}
+        {% if user.is_authenticated %}
+        <p class="text-muted mt-1">Post via the comments API at <code>/api/projects/{{ submission.pk }}/comments</code>.</p>
+        {% endif %}
+    </div>
 </div>
 {% endblock %}

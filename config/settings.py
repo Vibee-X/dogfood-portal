@@ -122,3 +122,7 @@ REST_FRAMEWORK = {
 LOGIN_URL = "/accounts/login/"
 LOGIN_REDIRECT_URL = "/"
 LOGOUT_REDIRECT_URL = "/"
+
+# T3 voting rate limits a browser/account ballot identity, not a network IP.
+VOTE_RATE_LIMIT_ATTEMPTS = 5
+VOTE_RATE_LIMIT_WINDOW_SECONDS = 60

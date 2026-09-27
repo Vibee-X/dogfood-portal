@@ -26,6 +26,23 @@
 - `core.AuditLog`: score writes record actor, operation, target, and old/new
   value metadata.
 
+## T3 community voting and comments
+
+- `events.Event.voting_access`: per-event policy of `public`,
+  `authenticated`, or active event `participants`. Voting also requires a
+  published event and an open `[voting_start, voting_end)` window.
+- `voting.Vote`: a submitted, published submission and an opaque `voter_ref`,
+  with a database `UniqueConstraint(submission, voter_ref)`. Authenticated
+  voters use `user:<user primary key>`; anonymous voters use a server-generated
+  signed browser-ballot cookie prefixed with `anon:`.
+- `voting.Comment`: submission, author, body, creation time, and `is_hidden`.
+  Comments retain their author even when an organizer/admin moderator hides
+  them.
+
+Vote creation and comment create/edit/moderation append `core.AuditLog` rows.
+The vote rate-limit counter is cache-backed and keyed by the event plus the
+same opaque voter reference.
+
 ## Import/export
 
 `scripts/seed.py` imports the official fixture IDs without collapsing duplicate
