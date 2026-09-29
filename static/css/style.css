@@ -87,7 +87,7 @@
     --color-neutral:          #b8bfdc;
     --color-neutral-soft:     rgba(148, 160, 210, 0.14);
     --color-neutral-border:   rgba(148, 160, 210, 0.30);
-    --btn-success-bg:         #0f8a5f;
+    --btn-success-bg:         #0d7f57;
     --btn-danger-bg:          #c53350;
 
     /* Track badges: hue comes from the track, lightness/chroma from the theme */
@@ -1613,6 +1613,61 @@ body.embed main.container { padding-top: var(--space-lg); }
 }
 
 /* --------------------------------------------------------------------------
+   20. OTHER PAGES — event detail, teams, judging, forms
+   -------------------------------------------------------------------------- */
+.event-detail > .detail-section { margin-top: 1.1rem; }
+.event-description {
+    margin-top: 0.55rem;
+    color: var(--color-text-secondary);
+    white-space: pre-line;
+    max-width: 60rem;
+}
+.tag-cloud {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.45rem;
+}
+.tag-cloud .tag { margin: 0; }
+.prize-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+}
+.prize-list strong { color: var(--color-text-heading); margin-right: 0.35rem; }
+.action-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+.action-row form { display: contents; }
+
+.table-card { padding: 0.35rem 0.5rem; }
+.invite-link code { display: inline-block; margin-right: 0.35rem; }
+.pairwise-project .link-pills { margin-top: var(--space-md); }
+
+/* Certificate (page keeps its own print rules inline) */
+.certificate { padding: 2.5rem 2rem; }
+.certificate h1 {
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+    margin: 0.9rem 0 0.6rem;
+}
+.certificate h2 {
+    font-size: var(--font-size-xl);
+    margin: 0.35rem 0;
+}
+
+/* Headings on simple content pages */
+main.container > div > h1,
+main.container > .mt-3 > h1 {
+    font-size: var(--font-size-2xl);
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+
+/* --------------------------------------------------------------------------
    16. LEGACY PAGE PIECES (kept until each page is migrated)
    -------------------------------------------------------------------------- */
 
@@ -1883,6 +1938,22 @@ html.no-transitions *::after {
     .btn:not(.btn-primary):not(.btn-success):not(.btn-danger),
     .alert {
         background: var(--color-surface-solid);
+    }
+}
+
+/* Print: plain paper, no decorative background or chrome */
+@media print {
+    body { background: #fff !important; color: #111 !important; }
+    body::before,
+    .ambient-background,
+    .site-header,
+    .skip-link,
+    .footer { display: none !important; }
+    .card {
+        background: #fff !important;
+        box-shadow: none !important;
+        backdrop-filter: none !important;
+        -webkit-backdrop-filter: none !important;
     }
 }
 

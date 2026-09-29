@@ -18,9 +18,9 @@
     <div class="card mt-2">
         <h3>Invite Links</h3>
         {% for link in invite_links %}
-        <div class="mt-1">
+        <div class="mt-1 invite-link">
             <code>{{ request.scheme }}://{{ request.get_host }}/teams/join/{{ link.code }}/</code>
-            {% if not link.is_valid %}<span class="tag" style="background:rgba(239,68,68,0.2); color:var(--color-danger);">Expired</span>{% endif %}
+            {% if not link.is_valid %}<span class="badge badge-danger">Expired</span>{% endif %}
         </div>
         {% empty %}
         <p class="text-muted mt-1">No invite links yet.</p>

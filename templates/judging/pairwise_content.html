@@ -1,15 +1,15 @@
-{% if comparison %}
+{% load ui %}{% if comparison %}
 <div class="pairwise-layout">
     <article class="card pairwise-project">
         <p class="pairwise-label">Project A</p>
         <h2 class="card-title">{{ comparison.submission_a.title }}</h2>
-        {% if comparison.submission_a.track %}<p class="card-meta">{{ comparison.submission_a.track.name }}</p>{% endif %}
+        {% if comparison.submission_a.track %}<p><span class="tag tag-track" style="--hue: {{ comparison.submission_a.track|track_hue }}">{{ comparison.submission_a.track.name }}</span></p>{% endif %}
         {% if comparison.submission_a.summary %}<p class="mt-1">{{ comparison.submission_a.summary }}</p>{% endif %}
         {% if comparison.submission_a.description %}<p class="text-muted mt-1">{{ comparison.submission_a.description|truncatewords:55 }}</p>{% endif %}
         {% for tag in comparison.submission_a.tech_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
-        <div class="mt-2">
-            {% if comparison.submission_a.repo_url %}<a href="{{ comparison.submission_a.repo_url }}" rel="noopener" target="_blank">Repository</a>{% endif %}
-            {% if comparison.submission_a.live_url %}<a href="{{ comparison.submission_a.live_url }}" rel="noopener" target="_blank">Live demo</a>{% endif %}
+        <div class="link-pills mt-2">
+            {% if comparison.submission_a.repo_url %}<a href="{{ comparison.submission_a.repo_url }}" rel="noopener" target="_blank" class="btn btn-glass btn-sm btn-pill">Repository</a>{% endif %}
+            {% if comparison.submission_a.live_url %}<a href="{{ comparison.submission_a.live_url }}" rel="noopener" target="_blank" class="btn btn-glass btn-sm btn-pill">Live demo</a>{% endif %}
         </div>
     </article>
 
@@ -18,13 +18,13 @@
     <article class="card pairwise-project">
         <p class="pairwise-label">Project B</p>
         <h2 class="card-title">{{ comparison.submission_b.title }}</h2>
-        {% if comparison.submission_b.track %}<p class="card-meta">{{ comparison.submission_b.track.name }}</p>{% endif %}
+        {% if comparison.submission_b.track %}<p><span class="tag tag-track" style="--hue: {{ comparison.submission_b.track|track_hue }}">{{ comparison.submission_b.track.name }}</span></p>{% endif %}
         {% if comparison.submission_b.summary %}<p class="mt-1">{{ comparison.submission_b.summary }}</p>{% endif %}
         {% if comparison.submission_b.description %}<p class="text-muted mt-1">{{ comparison.submission_b.description|truncatewords:55 }}</p>{% endif %}
         {% for tag in comparison.submission_b.tech_tags %}<span class="tag">{{ tag }}</span>{% endfor %}
-        <div class="mt-2">
-            {% if comparison.submission_b.repo_url %}<a href="{{ comparison.submission_b.repo_url }}" rel="noopener" target="_blank">Repository</a>{% endif %}
-            {% if comparison.submission_b.live_url %}<a href="{{ comparison.submission_b.live_url }}" rel="noopener" target="_blank">Live demo</a>{% endif %}
+        <div class="link-pills mt-2">
+            {% if comparison.submission_b.repo_url %}<a href="{{ comparison.submission_b.repo_url }}" rel="noopener" target="_blank" class="btn btn-glass btn-sm btn-pill">Repository</a>{% endif %}
+            {% if comparison.submission_b.live_url %}<a href="{{ comparison.submission_b.live_url }}" rel="noopener" target="_blank" class="btn btn-glass btn-sm btn-pill">Live demo</a>{% endif %}
         </div>
     </article>
 </div>
