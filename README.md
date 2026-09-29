@@ -93,6 +93,9 @@ surface, token header, and server-enforced role restrictions.
 - **Comments**: Active event members can comment on submitted public projects;
   authors can edit their own comments and organizer/admin moderators can
   hide or unhide them.
+- **Embed and certificates**: Published events expose a read-only frameable
+  gallery at `/projects/embed/<event-slug>/`; active event members can issue a
+  printable participation certificate with a public verification URL.
 
 ## Known limitations
 

@@ -2,7 +2,10 @@
 {% block title %}Events — Dogfood Portal{% endblock %}
 {% block content %}
 <div class="gallery-header">
-    <h1>Events</h1>
+    <div class="gallery-heading">
+        <h1>Events</h1>
+        <p class="page-subtitle">Discover and participate in upcoming hackathons.</p>
+    </div>
     {% if user.is_authenticated %}
     <a href="{% url 'events:event_create' %}" class="btn btn-primary">Create Event</a>
     {% endif %}
@@ -10,7 +13,7 @@
 
 <div class="grid grid-2">
     {% for event in events %}
-    <a href="{% url 'events:event_detail' slug=event.slug %}" style="text-decoration:none; color:inherit;">
+    <a href="{% url 'events:event_detail' slug=event.slug %}" class="card-link">
         <div class="card">
             <h3 class="card-title">{{ event.name }}</h3>
             <p class="text-muted">{{ event.description|truncatewords:30 }}</p>

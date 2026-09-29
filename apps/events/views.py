@@ -5,6 +5,7 @@ from django.contrib import messages
 from .models import Event, Track, Prize
 from .forms import EventForm, TrackForm, PrizeForm
 from apps.accounts.models import EventMembership
+from apps.core.models import Certificate
 
 
 def _is_organizer(user, event):
@@ -53,11 +54,27 @@ def event_detail(request, slug):
     is_org = _is_organizer(request.user, event)
     tracks = event.tracks.all()
     prizes = event.prizes.all()
+    participation_certificate = None
+    can_request_certificate = False
+    if request.user.is_authenticated:
+        can_request_certificate = EventMembership.objects.filter(
+            user=request.user,
+            event=event,
+            status=EventMembership.Status.ACTIVE,
+        ).exists()
+        if can_request_certificate:
+            participation_certificate = Certificate.objects.filter(
+                event=event,
+                user=request.user,
+                type="participation",
+            ).order_by("pk").first()
     return render(request, "events/event_detail.html", {
         "event": event,
         "is_organizer": is_org,
         "tracks": tracks,
         "prizes": prizes,
+        "can_request_certificate": can_request_certificate,
+        "participation_certificate": participation_certificate,
     })
 
 

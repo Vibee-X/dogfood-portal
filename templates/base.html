@@ -26,6 +26,11 @@
     <script src="{% static 'js/alpine.min.js' %}" defer></script>
 </head>
 <body>
+    <div class="ambient-background" aria-hidden="true">
+        <span class="ambient-orb ambient-orb-primary"></span>
+        <span class="ambient-orb ambient-orb-secondary"></span>
+    </div>
+
     <nav class="navbar">
         <div class="container nav-container">
             <a href="{% url 'submissions:gallery' %}" class="nav-brand">🐕 Dogfood Portal</a>

@@ -45,6 +45,9 @@
         <a href="{% url 'events:track_create' event_slug=event.slug %}" class="btn">Add Track</a>
         <a href="{% url 'events:prize_create' event_slug=event.slug %}" class="btn">Add Prize</a>
         <a href="{% url 'judging_web:progress_dashboard' slug=event.slug %}" class="btn">Judge Progress</a>
+        {% if event.is_published %}
+        <a href="{% url 'submissions:event_embed_gallery' slug=event.slug %}" class="btn" target="_blank" rel="noopener">Open Embed Gallery</a>
+        {% endif %}
     </div>
     {% endif %}
 
@@ -53,6 +56,18 @@
         <a href="{% url 'teams:team_create' event_slug=event.slug %}" class="btn btn-primary">Create Team</a>
         <a href="{% url 'submissions:submission_create' event_slug=event.slug %}" class="btn btn-success">Submit Project</a>
     </div>
+    {% if can_request_certificate %}
+    <div class="mt-2">
+        {% if participation_certificate %}
+        <a href="{% url 'core:certificate_verify' verification_code=participation_certificate.verification_code %}" class="btn">View Participation Certificate</a>
+        {% else %}
+        <form method="post" action="{% url 'core:certificate_issue' event_slug=event.slug %}">
+            {% csrf_token %}
+            <button type="submit" class="btn">Generate Participation Certificate</button>
+        </form>
+        {% endif %}
+    </div>
+    {% endif %}
     {% endif %}
 </div>
 {% endblock %}

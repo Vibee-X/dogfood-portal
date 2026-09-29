@@ -5,6 +5,8 @@ from django.utils import timezone
 from django.db.models import Q
 from django.contrib import messages
 from django.views.decorators.csrf import csrf_exempt
+from django.views.decorators.clickjacking import xframe_options_exempt
+from django.views.decorators.http import require_GET
 
 from rest_framework.decorators import api_view, authentication_classes, permission_classes
 from rest_framework.authentication import TokenAuthentication, SessionAuthentication
@@ -46,6 +48,21 @@ def gallery(request):
         "tracks": tracks,
         "search": search,
         "selected_track": track_id,
+    })
+
+
+@xframe_options_exempt
+@require_GET
+def event_embed_gallery(request, slug):
+    """A frameable, read-only gallery for one published event."""
+    event = get_object_or_404(Event, slug=slug, is_published=True)
+    submissions = Submission.objects.filter(
+        event=event,
+        status=Submission.Status.SUBMITTED,
+    ).select_related("team", "track").order_by("-submitted_at", "-created_at")
+    return render(request, "submissions/event_embed_gallery.html", {
+        "event": event,
+        "submissions": submissions,
     })
 
 

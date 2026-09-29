@@ -1,0 +1,36 @@
+{% load static %}
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="robots" content="noindex">
+    <title>{{ event.name }} — Project Gallery</title>
+    <link rel="stylesheet" href="{% static 'css/style.css' %}">
+</head>
+<body>
+    <main class="container">
+        <header class="gallery-header">
+            <div class="gallery-heading">
+                <h1>{{ event.name }} Projects</h1>
+                <p class="page-subtitle">Read-only project gallery</p>
+            </div>
+        </header>
+
+        <section class="grid grid-3" aria-label="Submitted projects">
+            {% for submission in submissions %}
+            <article class="card">
+                <h2 class="card-title">{{ submission.title }}</h2>
+                <p class="text-muted mb-1">{{ submission.summary|truncatewords:20 }}</p>
+                {% if submission.track %}
+                <span class="tag tag-track">{{ submission.track.name }}</span>
+                {% endif %}
+                <p class="card-meta">Team: {{ submission.team.name }}</p>
+            </article>
+            {% empty %}
+            <div class="card"><p class="text-muted">No submitted projects yet.</p></div>
+            {% endfor %}
+        </section>
+    </main>
+</body>
+</html>

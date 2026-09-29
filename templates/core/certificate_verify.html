@@ -1,0 +1,36 @@
+{% extends "base.html" %}
+{% block title %}Verified Certificate — Dogfood Portal{% endblock %}
+{% block content %}
+<style>
+    .certificate { max-width: 48rem; margin: 3rem auto; text-align: center; }
+    .certificate .certificate-code { font-family: monospace; word-break: break-all; }
+    .certificate .certificate-actions { margin-top: 1.5rem; }
+    @media print {
+        .navbar, .footer, .certificate-actions, .messages { display: none !important; }
+        body, main.container { background: #fff !important; color: #111 !important; max-width: none; }
+        .certificate { border: 1px solid #111; box-shadow: none; color: #111; }
+    }
+</style>
+<article class="card certificate">
+    <p class="tag">Verified participation certificate</p>
+    <h1>{{ certificate.event.name }}</h1>
+    <p>This certifies that</p>
+    <h2>{{ certificate.user.display_name|default:certificate.user.username }}</h2>
+    <p>participated in this event{% if certificate.team %} with team <strong>{{ certificate.team.name }}</strong>{% endif %}.</p>
+
+    {% if submitted_projects %}
+    <div class="mt-2">
+        <h3>Submitted project{% if submitted_projects|length > 1 %}s{% endif %}</h3>
+        {% for submission in submitted_projects %}
+        <p>{{ submission.title }}</p>
+        {% endfor %}
+    </div>
+    {% endif %}
+
+    <p class="text-muted mt-2">Issued {{ certificate.issued_at|date:"M d, Y" }}</p>
+    <p class="text-muted">Verification code: <span class="certificate-code">{{ certificate.verification_code }}</span></p>
+    <div class="certificate-actions">
+        <button type="button" class="btn btn-primary" onclick="window.print()">Print Certificate</button>
+    </div>
+</article>
+{% endblock %}

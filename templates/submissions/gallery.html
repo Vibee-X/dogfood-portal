@@ -2,7 +2,10 @@
 {% block title %}Projects — Dogfood Portal{% endblock %}
 {% block content %}
 <div class="gallery-header">
-    <h1>Project Gallery</h1>
+    <div class="gallery-heading">
+        <h1>Project Gallery</h1>
+        <p class="page-subtitle">Explore projects submitted by participating teams.</p>
+    </div>
     <form method="get" class="search-bar">
         <input type="text" name="q" placeholder="Search projects..." value="{{ search }}">
         <select name="track" onchange="this.form.submit()">
@@ -19,7 +22,7 @@
 
 <div class="grid grid-3">
     {% for submission in submissions %}
-    <a href="{% url 'submissions:project_detail' pk=submission.pk %}" style="text-decoration:none; color:inherit;">
+    <a href="{% url 'submissions:project_detail' pk=submission.pk %}" class="card-link">
         <div class="card">
             <h3 class="card-title">{{ submission.title }}</h3>
             <p class="text-muted mb-1">{{ submission.summary|truncatewords:20 }}</p>
