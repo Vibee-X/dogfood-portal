@@ -1141,7 +1141,132 @@ tbody tr:last-child td { border-bottom: 0; }
 .art-lg { width: 7.5rem; border-radius: var(--radius-lg); }
 
 /* --------------------------------------------------------------------------
-   15. LEGACY PAGE PIECES (kept until each page is migrated)
+   15. AUTH PAGES — hero on the left, glass form card on the right
+   -------------------------------------------------------------------------- */
+.auth-split {
+    display: grid;
+    grid-template-columns: minmax(0, 1.15fr) minmax(0, 27rem);
+    gap: clamp(2rem, 6vw, 5.5rem);
+    align-items: center;
+    min-height: calc(100vh - 15rem);
+    padding: var(--space-lg) 0 var(--space-xl);
+}
+
+.pill-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.45rem;
+    padding: 0.38rem 0.9rem;
+    border-radius: var(--radius-full);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    color: var(--color-text-heading);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    backdrop-filter: blur(var(--backdrop-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-sm)) saturate(var(--glass-saturate));
+    box-shadow: var(--glass-inset);
+}
+.pill-badge .icon { color: var(--color-primary); }
+
+.hero-title {
+    font-size: var(--font-size-hero);
+    font-weight: 800;
+    letter-spacing: -0.04em;
+    line-height: 1.04;
+    margin: 1.2rem 0 1.1rem;
+    max-width: 14ch;
+}
+.hero-title .text-gradient {
+    /* keep descenders from being clipped by background-clip */
+    padding-bottom: 0.06em;
+}
+.hero-lead {
+    font-size: clamp(1rem, 0.94rem + 0.3vw, 1.2rem);
+    line-height: 1.6;
+    color: var(--color-text-secondary);
+    max-width: 32rem;
+}
+
+/* Sign-up feature tiles: icon + short label in a glass chip */
+.feature-tiles {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 0.85rem;
+    margin-top: 2.4rem;
+    max-width: 36rem;
+}
+.feature-tile {
+    display: flex;
+    align-items: center;
+    gap: 0.7rem;
+    padding: 0.75rem 0.85rem;
+    border-radius: var(--radius-lg);
+    background: var(--color-surface);
+    border: 1px solid var(--color-border);
+    backdrop-filter: blur(var(--backdrop-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-sm)) saturate(var(--glass-saturate));
+    box-shadow: var(--glass-inset), var(--shadow-sm);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    line-height: 1.3;
+    color: var(--color-text-heading);
+}
+
+/* Login feature list: icon tile, title, one-line description */
+.feature-list {
+    list-style: none;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 1.25rem;
+    margin-top: 2.4rem;
+    max-width: 36rem;
+}
+.feature-list li {
+    display: flex;
+    flex-direction: column;
+    gap: 0.2rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+    line-height: 1.4;
+}
+.feature-list .icon-tile { margin-bottom: 0.55rem; }
+.feature-list strong {
+    color: var(--color-text-heading);
+    font-size: var(--font-size-base);
+    font-weight: 700;
+}
+
+.auth-card {
+    padding: 2.2rem 2rem 1.9rem;
+    border-radius: var(--radius-xl);
+    background: var(--color-surface-elevated);
+    box-shadow: var(--glass-inset-strong), var(--shadow-lg);
+}
+.auth-card-title {
+    font-size: 1.65rem;
+    font-weight: 800;
+    letter-spacing: -0.03em;
+}
+.auth-card-subtitle {
+    color: var(--color-text-secondary);
+    margin: 0.3rem 0 1.5rem;
+}
+.auth-card .form-group { margin-bottom: 0.85rem; }
+.auth-submit { margin-top: 1.35rem; }
+.auth-switch {
+    margin-top: 1.25rem;
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+.auth-switch a { font-weight: 600; }
+
+[x-cloak] { display: none !important; }
+
+/* --------------------------------------------------------------------------
+   16. LEGACY PAGE PIECES (kept until each page is migrated)
    -------------------------------------------------------------------------- */
 .search-bar {
     display: flex;
@@ -1326,6 +1451,17 @@ tbody tr:last-child td { border-bottom: 0; }
     .grid-2,
     .grid-3 { grid-template-columns: 1fr; }
 
+    .auth-split {
+        grid-template-columns: 1fr;
+        min-height: 0;
+        gap: var(--space-xl);
+        padding-top: var(--space-sm);
+    }
+    .auth-card { padding: 1.6rem 1.25rem 1.4rem; }
+    .hero-title { max-width: none; margin-top: 0.9rem; }
+    .feature-tiles,
+    .feature-list { margin-top: 1.5rem; max-width: none; }
+
     .pairwise-layout { grid-template-columns: 1fr; }
     .pairwise-versus { justify-self: center; }
 }
@@ -1337,6 +1473,18 @@ tbody tr:last-child td { border-bottom: 0; }
         --font-size-3xl: 2rem;
     }
     .nav-brand span { font-size: var(--font-size-base); }
+
+    .feature-tiles { gap: 0.5rem; }
+    .feature-tile {
+        flex-direction: column;
+        align-items: flex-start;
+        gap: 0.5rem;
+        padding: 0.7rem;
+        font-size: var(--font-size-xs);
+    }
+    .feature-list { gap: 0.75rem; }
+    .feature-list li { font-size: var(--font-size-xs); }
+    .feature-list strong { font-size: var(--font-size-sm); }
 }
 
 /* --------------------------------------------------------------------------

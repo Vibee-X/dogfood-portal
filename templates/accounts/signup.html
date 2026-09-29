@@ -1,27 +1,80 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block title %}Sign Up — Dogfood Portal{% endblock %}
 {% block content %}
-<div class="auth-container">
-    <div class="card">
-        <h1>Sign Up</h1>
+<div class="auth-split">
+    <section class="auth-hero" aria-labelledby="signup-hero-title">
+        <span class="pill-badge">{% include "includes/icon.html" with name="sparkles" size=14 %} Built for the</span>
+        <h1 id="signup-hero-title" class="hero-title">Dogfood<br> <span class="text-gradient">72-Hour Hackathon</span></h1>
+        <p class="hero-lead">Build. Collaborate. Innovate.<br>Turn ideas into impact in 72 hours.</p>
+        <ul class="feature-tiles">
+            <li class="feature-tile">
+                <span class="icon-tile">{% include "includes/icon.html" with name="compass" %}</span>
+                <span>Discover Projects</span>
+            </li>
+            <li class="feature-tile">
+                <span class="icon-tile">{% include "includes/icon.html" with name="calendar-check" %}</span>
+                <span>Join Events</span>
+            </li>
+            <li class="feature-tile">
+                <span class="icon-tile">{% include "includes/icon.html" with name="users" %}</span>
+                <span>Build Together</span>
+            </li>
+        </ul>
+    </section>
+
+    <section class="card auth-card" aria-labelledby="signup-title">
+        <h2 id="signup-title" class="auth-card-title">Create your account</h2>
+        <p class="auth-card-subtitle">Join the Dogfood community and start building.</p>
+
         <form method="post">
             {% csrf_token %}
+            {% if form.non_field_errors %}
+            <div class="alert alert-error" role="alert">
+                {% for error in form.non_field_errors %}{{ error }}{% endfor %}
+            </div>
+            {% endif %}
             {% for field in form %}
             <div class="form-group">
-                <label for="{{ field.id_for_label }}">{{ field.label }}</label>
-                {{ field }}
-                {% if field.errors %}
-                <div class="text-muted" style="color: var(--color-danger); font-size: 0.8rem;">
-                    {% for error in field.errors %}{{ error }}{% endfor %}
+                <label for="{{ field.id_for_label }}" class="sr-only">{{ field.label }}</label>
+                <div class="input-icon">
+                    {% if field.name == "username" %}
+                        {% include "includes/icon.html" with name="user" %}
+                        {{ field|placeholder:"Username" }}
+                    {% elif field.name == "email" %}
+                        {% include "includes/icon.html" with name="mail" %}
+                        {{ field|placeholder:"Email" }}
+                    {% elif field.name == "display_name" %}
+                        {% include "includes/icon.html" with name="id-card" %}
+                        {{ field|placeholder:"Display name" }}
+                    {% elif field.name == "password1" %}
+                        {% include "includes/icon.html" with name="lock" %}
+                        {{ field|placeholder:"Password" }}
+                    {% elif field.name == "password2" %}
+                        {% include "includes/icon.html" with name="shield-check" %}
+                        {{ field|placeholder:"Confirm password" }}
+                    {% else %}
+                        {% include "includes/icon.html" with name="file-text" %}
+                        {{ field|placeholder:field.label }}
+                    {% endif %}
                 </div>
+                {% if field.help_text %}
+                <div class="sr-only" id="{{ field.auto_id }}_helptext">{{ field.help_text|safe }}</div>
+                {% endif %}
+                {% if field.errors %}
+                <ul class="field-error" id="{{ field.auto_id }}_error">
+                    {% for error in field.errors %}<li>{{ error }}</li>{% endfor %}
+                </ul>
                 {% endif %}
             </div>
             {% endfor %}
-            <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Create Account</button>
+            <button type="submit" class="btn btn-primary btn-lg btn-block auth-submit">
+                Create Account {% include "includes/icon.html" with name="arrow-right" cls="icon-trailing" size=17 %}
+            </button>
         </form>
-        <p class="text-center mt-2 text-muted">
+        <p class="auth-switch">
             Already have an account? <a href="{% url 'accounts:login' %}">Log in</a>
         </p>
-    </div>
+    </section>
 </div>
 {% endblock %}

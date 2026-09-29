@@ -1,24 +1,65 @@
 {% extends "base.html" %}
 {% block title %}Login — Dogfood Portal{% endblock %}
 {% block content %}
-<div class="auth-container">
-    <div class="card">
-        <h1>Login</h1>
+<div class="auth-split">
+    <section class="auth-hero" aria-labelledby="login-hero-title">
+        <span class="pill-badge">{% include "includes/icon.html" with name="smile" size=14 %} Welcome back</span>
+        <h1 id="login-hero-title" class="hero-title"><span class="text-gradient">Good to<br> see you again</span></h1>
+        <p class="hero-lead">Log in to continue building amazing projects with the Dogfood community.</p>
+        <ul class="feature-list">
+            <li>
+                <span class="icon-tile">{% include "includes/icon.html" with name="folder" %}</span>
+                <strong>Your Projects</strong>
+                <span>Resume where you left off</span>
+            </li>
+            <li>
+                <span class="icon-tile">{% include "includes/icon.html" with name="calendar" %}</span>
+                <strong>Upcoming Events</strong>
+                <span>Never miss a deadline</span>
+            </li>
+            <li>
+                <span class="icon-tile">{% include "includes/icon.html" with name="users" %}</span>
+                <strong>Community</strong>
+                <span>Build with amazing people</span>
+            </li>
+        </ul>
+    </section>
+
+    <section class="card auth-card" aria-labelledby="login-title">
+        <h2 id="login-title" class="auth-card-title">Login</h2>
+        <p class="auth-card-subtitle">Enter your credentials to continue.</p>
+
         <form method="post">
             {% csrf_token %}
             <div class="form-group">
-                <label for="username">Username</label>
-                <input type="text" name="username" id="username" required autofocus>
+                <label for="username" class="sr-only">Username</label>
+                <div class="input-icon">
+                    {% include "includes/icon.html" with name="user" %}
+                    <input type="text" name="username" id="username" placeholder="Username" autocomplete="username" required autofocus>
+                </div>
             </div>
-            <div class="form-group">
-                <label for="password">Password</label>
-                <input type="password" name="password" id="password" required>
+            <div class="form-group" x-data="{ show: false }">
+                <label for="password" class="sr-only">Password</label>
+                <div class="input-icon has-trailing">
+                    {% include "includes/icon.html" with name="lock" %}
+                    <input type="password" name="password" id="password" placeholder="Password" autocomplete="current-password" required
+                           :type="show ? 'text' : 'password'">
+                    {# Hidden until Alpine runs, so it never shows as a dead control #}
+                    <button type="button" class="input-trailing" hidden :hidden="false"
+                            aria-label="Show password" aria-controls="password" aria-pressed="false"
+                            :aria-pressed="show ? 'true' : 'false'" @click="show = !show">
+                        <span x-show="!show">{% include "includes/icon.html" with name="eye" %}</span>
+                        <span x-show="show" x-cloak>{% include "includes/icon.html" with name="eye-off" %}</span>
+                    </button>
+                </div>
             </div>
-            <button type="submit" class="btn btn-primary btn-lg" style="width:100%">Login</button>
+            <button type="submit" class="btn btn-primary btn-lg btn-block auth-submit">
+                Login {% include "includes/icon.html" with name="arrow-right" cls="icon-trailing" size=17 %}
+            </button>
         </form>
-        <p class="text-center mt-2 text-muted">
+        <p class="auth-switch">
             No account? <a href="{% url 'accounts:signup' %}">Sign up</a>
         </p>
-    </div>
+    </section>
 </div>
 {% endblock %}
