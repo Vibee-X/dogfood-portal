@@ -1266,6 +1266,141 @@ tbody tr:last-child td { border-bottom: 0; }
 [x-cloak] { display: none !important; }
 
 /* --------------------------------------------------------------------------
+   16. INTERACTIVE LIST CARDS, EMPTY STATES
+   -------------------------------------------------------------------------- */
+a.card-interactive {
+    display: flex;
+    color: inherit;
+    text-decoration: none;
+}
+a.card-interactive:hover { color: inherit; }
+a.card-interactive:focus-visible {
+    outline: none;
+    box-shadow: var(--focus-ring), var(--shadow-md);
+}
+a.card-interactive:hover .card-title { color: var(--color-primary-hover); }
+[data-theme="light"] a.card-interactive:hover .card-title { color: var(--color-primary); }
+
+.empty-state {
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 0.75rem;
+    padding: 2.75rem 1.5rem;
+    text-align: center;
+    color: var(--color-text-secondary);
+}
+
+.art-md { width: 6.25rem; border-radius: 14px; }
+
+/* --------------------------------------------------------------------------
+   17. EVENTS — status sidebar + event cards
+   -------------------------------------------------------------------------- */
+.events-layout {
+    display: grid;
+    grid-template-columns: 14.5rem minmax(0, 1fr);
+    gap: var(--space-lg);
+    align-items: start;
+}
+
+.filter-nav {
+    position: sticky;
+    top: calc(var(--navbar-height) + 2.25rem);
+    padding: 0.9rem 0.7rem;
+}
+.filter-nav-title {
+    padding: 0 0.7rem 0.55rem;
+    font-size: var(--font-size-xs);
+    font-weight: 700;
+    letter-spacing: 0.08em;
+    text-transform: uppercase;
+    color: var(--color-text-muted);
+}
+.filter-nav ul {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 0.25rem;
+}
+.filter-link {
+    display: flex;
+    align-items: center;
+    gap: 0.65rem;
+    padding: 0.62rem 0.75rem;
+    border-radius: var(--radius-md);
+    border: 1px solid transparent;
+    color: var(--color-text-secondary);
+    font-size: var(--font-size-sm);
+    font-weight: 600;
+    white-space: nowrap;
+    transition: color var(--transition), background var(--transition), border-color var(--transition);
+}
+.filter-link:hover {
+    color: var(--color-text-heading);
+    background: var(--color-primary-soft);
+}
+.filter-link.active {
+    color: #fff;
+    background: var(--color-primary-gradient);
+    box-shadow: var(--glass-inset-strong), var(--color-primary-shadow);
+}
+
+.event-list {
+    display: flex;
+    flex-direction: column;
+    gap: var(--space-md);
+    min-width: 0;
+}
+.event-card {
+    align-items: center;
+    gap: 1.35rem;
+    padding: 1.15rem 1.3rem;
+}
+.event-card-body {
+    flex: 1;
+    min-width: 0;
+}
+.event-card-head {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.75rem;
+}
+.event-card .card-title {
+    margin: 0;
+    font-size: 1.2rem;
+}
+.event-card-desc {
+    margin-top: 0.3rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+.stat-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.75rem 1.9rem;
+    margin-top: 0.9rem;
+}
+.stat {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.stat dt {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+    font-weight: 500;
+    line-height: 1.3;
+}
+.stat dd {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-heading);
+    font-weight: 600;
+    line-height: 1.35;
+}
+
+/* --------------------------------------------------------------------------
    16. LEGACY PAGE PIECES (kept until each page is migrated)
    -------------------------------------------------------------------------- */
 .search-bar {
@@ -1462,6 +1597,19 @@ tbody tr:last-child td { border-bottom: 0; }
     .feature-tiles,
     .feature-list { margin-top: 1.5rem; max-width: none; }
 
+    /* Status sidebar becomes a row of tabs */
+    .events-layout { grid-template-columns: 1fr; gap: var(--space-md); }
+    .filter-nav {
+        position: static;
+        padding: 0.4rem;
+        overflow-x: auto;
+        scrollbar-width: none;
+    }
+    .filter-nav::-webkit-scrollbar { display: none; }
+    .filter-nav-title { display: none; }
+    .filter-nav ul { flex-direction: row; gap: 0.3rem; }
+    .filter-link { padding: 0.5rem 0.85rem; border-radius: var(--radius-full); }
+
     .pairwise-layout { grid-template-columns: 1fr; }
     .pairwise-versus { justify-self: center; }
 }
@@ -1485,6 +1633,23 @@ tbody tr:last-child td { border-bottom: 0; }
     .feature-list { gap: 0.75rem; }
     .feature-list li { font-size: var(--font-size-xs); }
     .feature-list strong { font-size: var(--font-size-sm); }
+
+    .event-card {
+        align-items: flex-start;
+        gap: 0.9rem;
+        padding: 1rem;
+    }
+    .event-card .art { width: 4.25rem; }
+    .event-card .round-arrow { display: none; }
+    .stat-row { gap: 0.7rem 1.2rem; }
+
+    /* Four equal tabs that fit a phone without horizontal scrolling */
+    .filter-nav li { flex: 1 1 auto; }
+    .filter-link {
+        justify-content: center;
+        padding: 0.5rem 0.6rem;
+    }
+    .filter-link .icon { display: none; }
 }
 
 /* --------------------------------------------------------------------------

@@ -2,10 +2,12 @@ from django.shortcuts import render, redirect, get_object_or_404
 from django.contrib.auth.decorators import login_required
 from django.http import HttpResponseForbidden
 from django.contrib import messages
+from django.db.models import Count, Q
 from .models import Event, Track, Prize
 from .forms import EventForm, TrackForm, PrizeForm
 from apps.accounts.models import EventMembership
 from apps.core.models import Certificate
+from apps.submissions.models import Submission
 
 
 def _is_organizer(user, event):
@@ -21,9 +23,31 @@ def _is_organizer(user, event):
 
 
 def event_list(request):
-    """List all published events."""
-    events = Event.objects.filter(is_published=True).order_by("-created_at")
-    return render(request, "events/event_list.html", {"events": events})
+    """List all published events, optionally filtered by ?status=."""
+    events = (
+        Event.objects.filter(is_published=True)
+        .annotate(
+            project_count=Count(
+                "submissions",
+                filter=Q(submissions__status=Submission.Status.SUBMITTED),
+                distinct=True,
+            ),
+            track_count=Count("tracks", distinct=True),
+        )
+        .order_by("-created_at")
+    )
+    status_filter = request.GET.get("status", "").strip().lower()
+    if status_filter not in Event.STATUS_LABELS:
+        status_filter = ""
+    if status_filter:
+        # Status is derived in Python from the event's dates (Event.status),
+        # so filter with the same rule the badges use.
+        events = [event for event in events if event.status == status_filter]
+    return render(request, "events/event_list.html", {
+        "events": events,
+        "status_filter": status_filter,
+        "status_filter_label": Event.STATUS_LABELS.get(status_filter, ""),
+    })
 
 
 @login_required

@@ -1,29 +1,94 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block title %}Events — Dogfood Portal{% endblock %}
 {% block content %}
-<div class="gallery-header">
-    <div class="gallery-heading">
+<div class="page-header">
+    <div class="page-heading">
         <h1>Events</h1>
         <p class="page-subtitle">Discover and participate in upcoming hackathons.</p>
     </div>
     {% if user.is_authenticated %}
-    <a href="{% url 'events:event_create' %}" class="btn btn-primary">Create Event</a>
+    <a href="{% url 'events:event_create' %}" class="btn btn-primary">
+        {% include "includes/icon.html" with name="plus" size=16 %} Create Event
+    </a>
     {% endif %}
 </div>
 
-<div class="grid grid-2">
-    {% for event in events %}
-    <a href="{% url 'events:event_detail' slug=event.slug %}" class="card-link">
-        <div class="card">
-            <h3 class="card-title">{{ event.name }}</h3>
-            <p class="text-muted">{{ event.description|truncatewords:30 }}</p>
-            <div class="card-meta mt-1">
-                {% if event.submission_deadline %}Deadline: {{ event.submission_deadline|date:"M d, Y H:i" }}{% endif %}
+<div class="events-layout">
+    <nav class="card filter-nav" aria-label="Filter events by status">
+        <p class="filter-nav-title">Browse</p>
+        <ul>
+            <li>
+                <a href="{% url 'events:event_list' %}" class="filter-link{% if not status_filter %} active{% endif %}"{% if not status_filter %} aria-current="page"{% endif %}>
+                    {% include "includes/icon.html" with name="grid" size=17 %} All Events
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'events:event_list' %}?status=ongoing" class="filter-link{% if status_filter == 'ongoing' %} active{% endif %}"{% if status_filter == 'ongoing' %} aria-current="page"{% endif %}>
+                    {% include "includes/icon.html" with name="play-circle" size=17 %} Ongoing
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'events:event_list' %}?status=upcoming" class="filter-link{% if status_filter == 'upcoming' %} active{% endif %}"{% if status_filter == 'upcoming' %} aria-current="page"{% endif %}>
+                    {% include "includes/icon.html" with name="clock" size=17 %} Upcoming
+                </a>
+            </li>
+            <li>
+                <a href="{% url 'events:event_list' %}?status=past" class="filter-link{% if status_filter == 'past' %} active{% endif %}"{% if status_filter == 'past' %} aria-current="page"{% endif %}>
+                    {% include "includes/icon.html" with name="history" size=17 %} Past
+                </a>
+            </li>
+        </ul>
+    </nav>
+
+    <section class="event-list" aria-label="{% if status_filter_label %}{{ status_filter_label }} events{% else %}All events{% endif %}">
+        {% for event in events %}
+        <a href="{% url 'events:event_detail' slug=event.slug %}" class="card card-interactive event-card">
+            <span class="art art-md" style="{% art_vars 'event' event.slug %}" aria-hidden="true"></span>
+            <div class="event-card-body">
+                <div class="event-card-head">
+                    <h2 class="card-title">{{ event.name }}</h2>
+                    <span class="badge badge-{{ event.status }}">
+                        {% if event.status == "ongoing" %}{% include "includes/icon.html" with name="play-circle" %}{% elif event.status == "past" %}{% include "includes/icon.html" with name="history" %}{% else %}{% include "includes/icon.html" with name="clock" %}{% endif %}
+                        {{ event.status_label }}
+                    </span>
+                </div>
+                {% if event.description %}
+                <p class="event-card-desc">{{ event.description|truncatewords:24 }}</p>
+                {% endif %}
+                <dl class="stat-row">
+                    <div class="stat">
+                        <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="calendar" size=16 %}</span>
+                        <div>
+                            <dt>Deadline</dt>
+                            <dd>{% if event.submission_deadline %}{{ event.submission_deadline|date:"M d, Y H:i" }}{% else %}Not set{% endif %}</dd>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="folder" size=16 %}</span>
+                        <div>
+                            <dt>Projects</dt>
+                            <dd>{{ event.project_count }} submitted</dd>
+                        </div>
+                    </div>
+                    <div class="stat">
+                        <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="layers" size=16 %}</span>
+                        <div>
+                            <dt>Tracks</dt>
+                            <dd>{{ event.track_count }} track{{ event.track_count|pluralize }}</dd>
+                        </div>
+                    </div>
+                </dl>
             </div>
+            <span class="round-arrow" aria-hidden="true">{% include "includes/icon.html" with name="chevron-right" %}</span>
+        </a>
+        {% empty %}
+        <div class="card empty-state">
+            <span class="icon-tile">{% include "includes/icon.html" with name="calendar" %}</span>
+            <p>{% if status_filter_label %}No {{ status_filter_label|lower }} events right now.{% else %}No events yet.{% endif %}</p>
+            {% if status_filter %}<a href="{% url 'events:event_list' %}" class="btn btn-sm">Show all events</a>{% endif %}
         </div>
-    </a>
-    {% empty %}
-    <div class="card"><p class="text-muted">No events yet.</p></div>
-    {% endfor %}
+        {% endfor %}
+    </section>
 </div>
 {% endblock %}

@@ -1,5 +1,6 @@
 from django.db import models
 from django.conf import settings
+from django.utils import timezone
 from django.utils.text import slugify
 
 
@@ -38,6 +39,13 @@ class Event(models.Model):
     created_at = models.DateTimeField(auto_now_add=True)
     updated_at = models.DateTimeField(auto_now=True)
 
+    # Display-only lifecycle derived from the dates above (not stored).
+    STATUS_LABELS = {
+        "upcoming": "Upcoming",
+        "ongoing": "Ongoing",
+        "past": "Past",
+    }
+
     def __str__(self):
         return self.name
 
@@ -45,6 +53,29 @@ class Event(models.Model):
         if not self.slug:
             self.slug = slugify(self.name)
         super().save(*args, **kwargs)
+
+    @property
+    def status(self):
+        """Return "upcoming", "ongoing" or "past" for display and filtering.
+
+        The event ends at end_date, falling back to submission_deadline. Before
+        start_date it is upcoming; after the end it is past; with any date set
+        and neither bound crossed it is ongoing. An event with no dates at all
+        has not been scheduled yet, so it counts as upcoming.
+        """
+        now = timezone.now()
+        end = self.end_date or self.submission_deadline
+        if self.start_date and now < self.start_date:
+            return "upcoming"
+        if end and now > end:
+            return "past"
+        if self.start_date or end:
+            return "ongoing"
+        return "upcoming"
+
+    @property
+    def status_label(self):
+        return self.STATUS_LABELS[self.status]
 
 
 class Track(models.Model):
