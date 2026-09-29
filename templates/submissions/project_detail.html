@@ -1,60 +1,130 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block title %}{{ submission.title }} — Dogfood Portal{% endblock %}
 {% block content %}
 <div class="project-detail">
-    <a href="{% url 'submissions:gallery' %}" class="text-muted">&larr; Back to Gallery</a>
-    <h1 class="mt-2">{{ submission.title }}</h1>
-    <div class="meta">
-        Team: {{ submission.team.name }}
-        {% if submission.track %} · Track: {{ submission.track.name }}{% endif %}
-        {% if submission.submitted_at %} · Submitted {{ submission.submitted_at|date:"M d, Y H:i" }}{% endif %}
-    </div>
+    <a href="{% url 'submissions:gallery' %}" class="back-link">
+        {% include "includes/icon.html" with name="arrow-left" size=16 %} Back to Gallery
+    </a>
 
-    {% if submission.tagline %}
-    <p style="font-size: 1.1rem; color: var(--color-accent); margin-bottom: 1rem;">{{ submission.tagline }}</p>
-    {% endif %}
+    <header class="card detail-hero">
+        <span class="art art-lg" style="{% art_vars 'submission' submission.pk %}" aria-hidden="true"></span>
+        <div class="detail-hero-body">
+            <div class="detail-title-row">
+                <h1>{{ submission.title }}</h1>
+                {% if submission.track %}
+                <span class="tag tag-track" style="--hue: {{ submission.track|track_hue }}">{{ submission.track.name }}</span>
+                {% endif %}
+                {% if submission.status == "submitted" %}
+                <span class="badge badge-success">{% include "includes/icon.html" with name="check-circle" %} Submitted</span>
+                {% endif %}
+            </div>
+            {% if submission.tagline %}
+            <p class="detail-tagline">{{ submission.tagline }}</p>
+            {% endif %}
+            <ul class="detail-meta">
+                <li>{% include "includes/icon.html" with name="users" size=16 %} Team: {{ submission.team.name }}</li>
+                {% if submission.track %}
+                <li>{% include "includes/icon.html" with name="layers" size=16 %} Track: {{ submission.track.name }}</li>
+                {% endif %}
+                {% if submission.submitted_at %}
+                <li>{% include "includes/icon.html" with name="calendar" size=16 %} Submitted <time datetime="{{ submission.submitted_at|date:'c' }}">{{ submission.submitted_at|date:"M d, Y H:i" }}</time></li>
+                {% endif %}
+            </ul>
+        </div>
+        {% if submission.repo_url or submission.live_url %}
+        <div class="detail-actions">
+            {% if submission.repo_url %}
+            <a href="{{ submission.repo_url }}" class="btn btn-glass" target="_blank" rel="noopener noreferrer">
+                {% include "includes/icon.html" with name="github" size=17 %} View Repository
+            </a>
+            {% endif %}
+            {% if submission.live_url %}
+            <a href="{{ submission.live_url }}" class="btn btn-glass btn-icon" target="_blank" rel="noopener noreferrer"
+               aria-label="Open live demo (opens in a new tab)" title="Open live demo">
+                {% include "includes/icon.html" with name="external-link" size=17 %}
+            </a>
+            {% endif %}
+        </div>
+        {% endif %}
+    </header>
 
-    <div class="card mt-2">
-        <h3>Summary</h3>
-        <p class="description mt-1">{{ submission.summary }}</p>
+    <div class="detail-grid">
+        <section class="card detail-section" aria-labelledby="summary-heading">
+            <h2 id="summary-heading" class="section-title">
+                <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="file-text" size=16 %}</span> Summary
+            </h2>
+            {% if submission.summary %}
+            <p class="description">{{ submission.summary }}</p>
+            {% else %}
+            <p class="text-muted">No summary provided.</p>
+            {% endif %}
+        </section>
+
+        <section class="card detail-section" aria-labelledby="links-heading">
+            <h2 id="links-heading" class="section-title">
+                <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="link" size=16 %}</span> Links
+            </h2>
+            {% if submission.repo_url or submission.live_url or submission.demo_video_url %}
+            <div class="link-pills">
+                {% if submission.repo_url %}
+                <a href="{{ submission.repo_url }}" class="btn btn-glass btn-pill" target="_blank" rel="noopener noreferrer">
+                    {% include "includes/icon.html" with name="github" size=16 %} Repository
+                </a>
+                {% endif %}
+                {% if submission.live_url %}
+                <a href="{{ submission.live_url }}" class="btn btn-glass btn-pill" target="_blank" rel="noopener noreferrer">
+                    {% include "includes/icon.html" with name="globe" size=16 %} Live Demo
+                </a>
+                {% endif %}
+                {% if submission.demo_video_url %}
+                <a href="{{ submission.demo_video_url }}" class="btn btn-glass btn-pill" target="_blank" rel="noopener noreferrer">
+                    {% include "includes/icon.html" with name="video" size=16 %} Demo Video
+                </a>
+                {% endif %}
+            </div>
+            {% else %}
+            <p class="text-muted">No links provided.</p>
+            {% endif %}
+        </section>
     </div>
 
     {% if submission.description %}
-    <div class="card mt-2">
-        <h3>Description</h3>
-        <p class="description mt-1">{{ submission.description }}</p>
-    </div>
+    <section class="card detail-section" aria-labelledby="description-heading">
+        <h2 id="description-heading" class="section-title">
+            <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="quote" size=16 %}</span> Description
+        </h2>
+        <p class="description">{{ submission.description }}</p>
+    </section>
     {% endif %}
 
-    <div class="card mt-2">
-        <h3>Links</h3>
-        <div class="mt-1">
-            {% if submission.repo_url %}
-            <a href="{{ submission.repo_url }}" class="btn btn-sm" target="_blank">Repository</a>
-            {% endif %}
-            {% if submission.live_url %}
-            <a href="{{ submission.live_url }}" class="btn btn-sm" target="_blank">Live Demo</a>
-            {% endif %}
-            {% if submission.demo_video_url %}
-            <a href="{{ submission.demo_video_url }}" class="btn btn-sm" target="_blank">Demo Video</a>
-            {% endif %}
-        </div>
-    </div>
-
-    <div class="card mt-2">
-        <h3>Community comments</h3>
-        {% for comment in comments %}
-        <div class="mt-1">
-            <strong>{{ comment.user.display_name|default:comment.user.username }}</strong>
-            <span class="text-muted">· {{ comment.created_at|date:"M d, Y H:i" }}</span>
-            <p>{{ comment.body }}</p>
-        </div>
-        {% empty %}
+    <section class="card detail-section" aria-labelledby="comments-heading">
+        <h2 id="comments-heading" class="section-title">
+            <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="message-circle" size=16 %}</span> Community comments
+        </h2>
+        {% if comments %}
+        <ul class="comment-list">
+            {% for comment in comments %}
+            {% with author=comment.user.display_name|default:comment.user.username %}
+            <li class="comment">
+                <span class="comment-avatar" aria-hidden="true">{{ author|first|upper }}</span>
+                <div class="comment-content">
+                    <div class="comment-head">
+                        <strong class="comment-author">{{ author }}</strong>
+                        <time class="comment-date" datetime="{{ comment.created_at|date:'c' }}">{{ comment.created_at|date:"M d, Y H:i" }}</time>
+                    </div>
+                    <p class="comment-body">{{ comment.body }}</p>
+                </div>
+            </li>
+            {% endwith %}
+            {% endfor %}
+        </ul>
+        {% else %}
         <p class="text-muted">No public comments yet.</p>
-        {% endfor %}
-        {% if user.is_authenticated %}
-        <p class="text-muted mt-1">Post via the comments API at <code>/api/projects/{{ submission.pk }}/comments</code>.</p>
         {% endif %}
-    </div>
+        {% if user.is_authenticated %}
+        <p class="comment-api-hint">Post via the comments API at <code>/api/projects/{{ submission.pk }}/comments</code>.</p>
+        {% endif %}
+    </section>
 </div>
 {% endblock %}

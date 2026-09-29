@@ -1488,18 +1488,133 @@ a.card-interactive:hover .card-title { color: var(--color-primary-hover); }
 body.embed main.container { padding-top: var(--space-lg); }
 
 /* --------------------------------------------------------------------------
-   16. LEGACY PAGE PIECES (kept until each page is migrated)
+   19. PROJECT DETAIL
    -------------------------------------------------------------------------- */
-.project-detail { margin: var(--space-lg) 0; }
-.project-detail .meta {
-    color: var(--color-text-secondary);
-    margin-bottom: var(--space-lg);
-    font-size: var(--font-size-sm);
+.detail-hero {
+    display: flex;
+    align-items: center;
+    gap: 1.5rem;
+    margin-top: 0.9rem;
+    padding: 1.4rem 1.5rem;
+    border-radius: var(--radius-xl);
 }
+.detail-hero .art-lg { width: 8rem; }
+.detail-hero-body {
+    flex: 1;
+    min-width: 0;
+}
+.detail-title-row {
+    display: flex;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 0.5rem 0.65rem;
+}
+.detail-title-row h1 {
+    font-size: clamp(1.6rem, 1.2rem + 1.4vw, 2.3rem);
+    font-weight: 800;
+    letter-spacing: -0.035em;
+    margin-right: 0.3rem;
+    overflow-wrap: anywhere;
+}
+.detail-title-row .tag { margin: 0; }
+.detail-tagline {
+    margin-top: 0.45rem;
+    font-size: var(--font-size-md);
+    font-weight: 500;
+    color: var(--color-primary);
+}
+.detail-meta {
+    list-style: none;
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.4rem 1.4rem;
+    margin-top: 0.85rem;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+.detail-meta li {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.4rem;
+}
+.detail-meta .icon { color: var(--color-text-muted); }
+.detail-actions {
+    display: flex;
+    gap: 0.5rem;
+    align-self: flex-start;
+    flex-shrink: 0;
+}
+
+.detail-grid {
+    display: grid;
+    grid-template-columns: minmax(0, 1.4fr) minmax(0, 1fr);
+    gap: 1.1rem;
+    margin-top: 1.1rem;
+}
+.detail-section { padding: 1.35rem 1.5rem; }
+.project-detail > .detail-section { margin-top: 1.1rem; }
 .description {
     line-height: 1.75;
     white-space: pre-line;
+    overflow-wrap: anywhere;
 }
+.link-pills {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 0.55rem;
+}
+
+.comment-list {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: 1.1rem;
+}
+.comment {
+    display: flex;
+    gap: 0.8rem;
+}
+.comment-avatar {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 2.1rem;
+    height: 2.1rem;
+    border-radius: var(--radius-full);
+    background: var(--color-primary-gradient);
+    color: #fff;
+    font-size: var(--font-size-sm);
+    font-weight: 700;
+    flex-shrink: 0;
+}
+.comment-content { min-width: 0; }
+.comment-head {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: baseline;
+    gap: 0.2rem 0.6rem;
+}
+.comment-author { color: var(--color-text-heading); }
+.comment-date {
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+.comment-body {
+    margin-top: 0.15rem;
+    white-space: pre-line;
+    overflow-wrap: anywhere;
+}
+.comment-api-hint {
+    margin-top: 1.1rem;
+    padding-top: 0.9rem;
+    border-top: 1px solid var(--color-border-strong);
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
+/* --------------------------------------------------------------------------
+   16. LEGACY PAGE PIECES (kept until each page is migrated)
+   -------------------------------------------------------------------------- */
 
 /* Narrow single-card pages (forms) */
 .auth-container {
@@ -1648,6 +1763,19 @@ body.embed main.container { padding-top: var(--space-lg); }
     .track-field { flex: 1 1 auto; }
     .track-field select { min-width: 0; }
     .project-grid { grid-template-columns: 1fr; }
+
+    .detail-hero {
+        flex-wrap: wrap;
+        align-items: flex-start;
+        gap: 1rem 1.1rem;
+        padding: 1.1rem;
+    }
+    .detail-hero .art-lg { width: 5rem; }
+    .detail-hero-body { flex-basis: calc(100% - 6.5rem); }
+    .detail-actions { width: 100%; }
+    .detail-actions .btn:not(.btn-icon) { flex: 1; }
+    .detail-grid { grid-template-columns: 1fr; }
+    .detail-section { padding: 1.15rem; }
 
     .grid-2,
     .grid-3 { grid-template-columns: 1fr; }
