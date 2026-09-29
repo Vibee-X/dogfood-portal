@@ -1,34 +1,51 @@
-{% load static %}
+{% load static ui %}
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" data-theme="dark">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <meta name="robots" content="noindex">
     <title>{{ event.name }} — Project Gallery</title>
     <link rel="stylesheet" href="{% static 'css/style.css' %}">
+    <script>
+        /* Follow the viewer's saved or system theme, like the main portal */
+        (function(){
+            try {
+                var t = localStorage.getItem('dogfood-theme');
+                if (t === 'light' || t === 'dark') {
+                    document.documentElement.setAttribute('data-theme', t);
+                } else if (window.matchMedia && window.matchMedia('(prefers-color-scheme: light)').matches) {
+                    document.documentElement.setAttribute('data-theme', 'light');
+                }
+            } catch(e){}
+        })();
+    </script>
 </head>
-<body>
+<body class="embed">
     <main class="container">
-        <header class="gallery-header">
-            <div class="gallery-heading">
+        <header class="page-header">
+            <div class="page-heading">
                 <h1>{{ event.name }} Projects</h1>
                 <p class="page-subtitle">Read-only project gallery</p>
             </div>
         </header>
 
-        <section class="grid grid-3" aria-label="Submitted projects">
+        {# Read-only: cards deliberately do not link to project pages. #}
+        <section class="project-grid" aria-label="Submitted projects">
             {% for submission in submissions %}
-            <article class="card">
-                <h2 class="card-title">{{ submission.title }}</h2>
-                <p class="text-muted mb-1">{{ submission.summary|truncatewords:20 }}</p>
-                {% if submission.track %}
-                <span class="tag tag-track">{{ submission.track.name }}</span>
-                {% endif %}
-                <p class="card-meta">Team: {{ submission.team.name }}</p>
+            <article class="card project-card">
+                <span class="art" style="{% art_vars 'submission' submission.pk %}" aria-hidden="true"></span>
+                <div class="project-card-body">
+                    <h2 class="card-title">{{ submission.title }}</h2>
+                    {% if submission.summary %}<p class="project-card-summary">{{ submission.summary|truncatewords:20 }}</p>{% endif %}
+                    {% if submission.track %}
+                    <span class="tag tag-track" style="--hue: {{ submission.track|track_hue }}">{{ submission.track.name }}</span>
+                    {% endif %}
+                    <p class="project-card-meta">Team: {{ submission.team.name }}</p>
+                </div>
             </article>
             {% empty %}
-            <div class="card"><p class="text-muted">No submitted projects yet.</p></div>
+            <div class="card empty-state"><p>No submitted projects yet.</p></div>
             {% endfor %}
         </section>
     </main>

@@ -892,6 +892,7 @@ main.container:focus { outline: none; }
 }
 .input-icon > .icon {
     position: absolute;
+    z-index: 1; /* stay above glass inputs, whose backdrop-filter stacks them */
     left: 0.95rem;
     top: 50%;
     transform: translateY(-50%);
@@ -907,6 +908,7 @@ main.container:focus { outline: none; }
 }
 .input-trailing {
     position: absolute;
+    z-index: 1;
     right: 0.4rem;
     top: 50%;
     transform: translateY(-50%);
@@ -939,6 +941,7 @@ main.container:focus { outline: none; }
 }
 .select-wrap > .icon {
     position: absolute;
+    z-index: 1;
     right: 0.85rem;
     top: 50%;
     transform: translateY(-50%);
@@ -1352,6 +1355,7 @@ a.card-interactive:hover .card-title { color: var(--color-primary-hover); }
     min-width: 0;
 }
 .event-card {
+    display: flex;
     align-items: center;
     gap: 1.35rem;
     padding: 1.15rem 1.3rem;
@@ -1401,32 +1405,91 @@ a.card-interactive:hover .card-title { color: var(--color-primary-hover); }
 }
 
 /* --------------------------------------------------------------------------
-   16. LEGACY PAGE PIECES (kept until each page is migrated)
+   18. PROJECT GALLERY — search bar + two-column project cards
    -------------------------------------------------------------------------- */
 .search-bar {
     display: flex;
-    gap: var(--space-sm);
+    align-items: center;
+    gap: 0.6rem;
+}
+.search-bar .input {
+    padding-top: 0.62rem;
+    padding-bottom: 0.62rem;
+    background: var(--color-surface);
+    border-color: var(--color-border);
+    font-size: var(--font-size-sm);
+    backdrop-filter: blur(var(--backdrop-blur-sm)) saturate(var(--glass-saturate));
+    -webkit-backdrop-filter: blur(var(--backdrop-blur-sm)) saturate(var(--glass-saturate));
+}
+.search-bar .input:focus { background: var(--color-input-bg-focus); }
+.search-field { width: 17.5rem; }
+.track-field select { min-width: 11.5rem; }
+.search-submit { padding: 0.62rem 1.35rem; }
+
+.project-grid {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.1rem;
+}
+.project-grid > .empty-state { grid-column: 1 / -1; }
+
+.project-card {
+    display: flex;
+    align-items: center;
+    gap: 1.15rem;
+    padding: 1rem 1.15rem;
+}
+.project-card-body {
+    flex: 1;
+    min-width: 0;
+    display: flex;
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 0.45rem;
+}
+.project-card .card-title {
+    margin: 0;
+    max-width: 100%;
+    font-size: 1.08rem;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    white-space: nowrap;
+}
+.project-card .tag { margin: 0; }
+.project-card-summary {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+.project-card-meta {
+    display: flex;
     flex-wrap: wrap;
     align-items: center;
+    gap: 0.25rem 1.1rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
 }
-.search-bar input,
-.search-bar select {
-    padding: 0.6rem 0.9rem;
-    border: 1px solid var(--color-input-border);
-    border-radius: var(--radius-md);
-    background: var(--color-input-bg);
-    color: var(--color-text-heading);
-    font-family: var(--font-family);
-    font-size: var(--font-size-sm);
-}
-.search-bar input { min-width: 220px; }
-.search-bar input:focus,
-.search-bar select:focus {
-    outline: none;
-    border-color: var(--focus-color);
-    box-shadow: var(--focus-ring);
+.meta-item {
+    display: inline-flex;
+    align-items: center;
+    gap: 0.35rem;
 }
 
+/* Small colour dot in track badges */
+.tag-track::before {
+    content: '';
+    width: 0.42rem;
+    height: 0.42rem;
+    border-radius: 50%;
+    background: currentColor;
+    opacity: 0.85;
+}
+
+/* Standalone embed page (no navbar) */
+body.embed main.container { padding-top: var(--space-lg); }
+
+/* --------------------------------------------------------------------------
+   16. LEGACY PAGE PIECES (kept until each page is migrated)
+   -------------------------------------------------------------------------- */
 .project-detail { margin: var(--space-lg) 0; }
 .project-detail .meta {
     color: var(--color-text-secondary);
@@ -1580,8 +1643,11 @@ a.card-interactive:hover .card-title { color: var(--color-primary-hover); }
         flex-direction: column;
         align-items: stretch;
     }
-    .search-bar { flex-direction: column; align-items: stretch; }
-    .search-bar input { min-width: 0; width: 100%; }
+    .search-bar { flex-wrap: wrap; }
+    .search-field { flex: 1 1 100%; width: auto; }
+    .track-field { flex: 1 1 auto; }
+    .track-field select { min-width: 0; }
+    .project-grid { grid-template-columns: 1fr; }
 
     .grid-2,
     .grid-3 { grid-template-columns: 1fr; }

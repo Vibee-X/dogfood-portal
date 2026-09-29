@@ -1,48 +1,61 @@
 {% extends "base.html" %}
+{% load ui %}
 {% block title %}Projects — Dogfood Portal{% endblock %}
 {% block content %}
-<div class="gallery-header">
-    <div class="gallery-heading">
+<div class="page-header">
+    <div class="page-heading">
         <h1>Project Gallery</h1>
-        <p class="page-subtitle">Explore projects submitted by participating teams.</p>
+        <p class="page-subtitle">Explore innovative projects from amazing teams.</p>
     </div>
-    <form method="get" class="search-bar">
-        <input type="text" name="q" placeholder="Search projects..." value="{{ search }}">
-        <select name="track" onchange="this.form.submit()">
-            <option value="">All Tracks</option>
-            {% for track in tracks %}
-            <option value="{{ track.pk }}" {% if selected_track == track.pk|stringformat:"d" %}selected{% endif %}>
-                {{ track.name }}
-            </option>
-            {% endfor %}
-        </select>
-        <button type="submit" class="btn btn-primary btn-sm">Search</button>
+    <form method="get" class="search-bar" role="search">
+        <div class="input-icon search-field">
+            <label for="gallery-q" class="sr-only">Search projects</label>
+            {% include "includes/icon.html" with name="search" size=17 %}
+            <input type="text" class="input" name="q" id="gallery-q" placeholder="Search projects..." value="{{ search }}">
+        </div>
+        <div class="select-wrap track-field">
+            <label for="gallery-track" class="sr-only">Filter by track</label>
+            <select class="input" name="track" id="gallery-track" onchange="this.form.submit()">
+                <option value="">All Tracks</option>
+                {% for track in tracks %}
+                <option value="{{ track.pk }}" {% if selected_track == track.pk|stringformat:"d" %}selected{% endif %}>
+                    {{ track.name }}
+                </option>
+                {% endfor %}
+            </select>
+            {% include "includes/icon.html" with name="chevron-down" size=16 %}
+        </div>
+        <button type="submit" class="btn btn-primary search-submit">Search</button>
     </form>
 </div>
 
-<div class="grid grid-3">
+<section class="project-grid" aria-label="Projects">
     {% for submission in submissions %}
-    <a href="{% url 'submissions:project_detail' pk=submission.pk %}" class="card-link">
-        <div class="card">
-            <h3 class="card-title">{{ submission.title }}</h3>
-            <p class="text-muted mb-1">{{ submission.summary|truncatewords:20 }}</p>
-            <div class="mb-1">
-                {% if submission.track %}
-                <span class="tag tag-track">{{ submission.track.name }}</span>
-                {% endif %}
-            </div>
-            <div class="card-meta">
-                Team: {{ submission.team.name }}
+    <a href="{% url 'submissions:project_detail' pk=submission.pk %}" class="card card-interactive project-card">
+        <span class="art" style="{% art_vars 'submission' submission.pk %}" aria-hidden="true"></span>
+        <div class="project-card-body">
+            <h2 class="card-title">{{ submission.title }}</h2>
+            {% if submission.track %}
+            <span class="tag tag-track" style="--hue: {{ submission.track|track_hue }}">{{ submission.track.name }}</span>
+            {% endif %}
+            <div class="project-card-meta">
+                <span>Team: {{ submission.team.name }}</span>
                 {% if submission.submitted_at %}
-                · {{ submission.submitted_at|date:"M d, Y" }}
+                <span class="meta-item">
+                    {% include "includes/icon.html" with name="calendar" size=14 %}
+                    <time datetime="{{ submission.submitted_at|date:'c' }}">{{ submission.submitted_at|date:"M d, Y" }}</time>
+                </span>
                 {% endif %}
             </div>
         </div>
+        <span class="round-arrow" aria-hidden="true">{% include "includes/icon.html" with name="chevron-right" %}</span>
     </a>
     {% empty %}
-    <div class="card">
-        <p class="text-muted">No projects found.</p>
+    <div class="card empty-state">
+        <span class="icon-tile">{% include "includes/icon.html" with name="search" %}</span>
+        <p>No projects found.</p>
+        {% if search or selected_track %}<a href="{% url 'submissions:gallery' %}" class="btn btn-sm">Clear filters</a>{% endif %}
     </div>
     {% endfor %}
-</div>
+</section>
 {% endblock %}
