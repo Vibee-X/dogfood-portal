@@ -49,8 +49,12 @@ The project result is the mean of its included review z-scores. Partial reviews
 are included using their observed weights; assignments with no scores are
 omitted rather than treated as zero. If a judge has fewer than two scored
 reviews, or rates every review identically (`stddev = 0`), every one of that
-judge's z-scores is defined as `0`. This avoids division by zero and ensures a
-constant scorer supplies no artificial ranking signal.
+judge's z-scores is defined as `0`. This avoids division by zero and stops a
+constant scorer's fixed scale from ordering the projects they reviewed. It is
+not neutral, though: those zeros are still averaged into each project's mean,
+so they pull the project toward the event average and dilute the other
+judges' z-scores for it (see "Known weaknesses of this method" below; on the
+fixture data this halves `prj_19`'s only informative z-score).
 
 ### Reproducible local snapshot example
 
@@ -137,9 +141,10 @@ functionality/innovation/quality):
   (+1.0000, +2.1094, -1.7321, 0.0000, 0.0000) average +0.2755.
 - **Small Relay (`prj_19`) drops 17 places.** It has two reviews. Iva
   Petrova's 4/4/4 (raw 0.8000) raised its raw mean, but she gave every
-  project that score, so it carries no ranking signal (z = 0). Ines Rocha
-  scored it 3/5/2 (raw 0.6667), below her own mean of 0.7037 over 9 reviews
-  (z = -0.4767). The two z-scores average -0.2384.
+  project that score, so her review gets z = 0. Ines Rocha scored it 3/5/2
+  (raw 0.6667), below her own mean of 0.7037 over 9 reviews (z = -0.4767).
+  The two z-scores average -0.2384: the constant scorer's 0 no longer lifts
+  the project, but it still halves Ines Rocha's signal.
 
 ### Constant scorer and too-few-review judges
 
