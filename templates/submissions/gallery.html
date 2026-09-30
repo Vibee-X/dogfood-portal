@@ -38,9 +38,8 @@
             {% if submission.track %}
             <span class="tag tag-track" style="--hue: {{ submission.track|track_hue }}">{{ submission.track.name }}</span>
             {% endif %}
-            {% with blurb=submission.tagline|default:submission.summary %}
-            {% if blurb %}<p class="project-card-summary clamp-2">{{ blurb }}</p>{% endif %}
-            {% endwith %}
+            {# Cards show the team's tagline only; the summary lives on the project page. #}
+            {% if submission.tagline %}<p class="project-card-summary clamp-2">{{ submission.tagline }}</p>{% endif %}
             <div class="project-card-meta">
                 <span class="meta-item">{% include "includes/icon.html" with name="users" size=14 %} <span class="sr-only">Team:</span> {{ submission.team.name }}</span>
                 {% if submission.submitted_at %}

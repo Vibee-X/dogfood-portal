@@ -81,9 +81,12 @@ def test_gallery_cards_show_real_text_and_only_existing_links():
 
     queries, response = count_queries("/projects/")
     content = response.content.decode()
-    assert "The tagline" in content and "The summary" not in content
-    assert "Only a summary" in content
-    assert content.count('class="project-card-summary clamp-2"') == 3  # "No Text" has none
+    # Cards show only the tagline; summaries stay on the project page.
+    assert "The tagline" in content
+    assert "The summary" not in content and "Only a summary" not in content and "Quiet" not in content
+    assert content.count('class="project-card-summary clamp-2"') == 1
+    summary_only = Submission.objects.get(title="Summary Only")
+    assert "Only a summary" in Client().get(f"/projects/{summary_only.pk}/").content.decode()
     assert content.count('<ul class="link-indicators"') == 3  # "No Links" has none
     assert content.count(" Repo</li>") == 1
     assert content.count(" Live demo</li>") == 1
