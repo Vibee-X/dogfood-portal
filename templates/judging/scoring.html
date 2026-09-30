@@ -1,0 +1,93 @@
+{% extends "base.html" %}
+{% load ui %}
+{% block title %}Score assignments — {{ event.name }}{% endblock %}
+{% block content %}
+<div class="scoring-page">
+    <a href="{% url 'events:event_detail' slug=event.slug %}" class="back-link">
+        {% include "includes/icon.html" with name="arrow-left" size=16 %} {{ event.name }}
+    </a>
+
+    <div class="page-header">
+        <div class="page-heading">
+            <h1>Score your assignments</h1>
+            <p class="page-subtitle">
+                {{ rows|length }} assignment{{ rows|length|pluralize }} &middot; {{ complete_count }} complete
+                &middot; only you and the event organizers can see your scores
+            </p>
+        </div>
+        <a href="{% url 'judging_web:pairwise_dashboard' slug=event.slug %}" class="btn btn-sm">
+            {% include "includes/icon.html" with name="layers" size=15 %} Pairwise judging
+        </a>
+    </div>
+
+    {% if page_error %}
+    <div class="alert alert-error" role="alert">{{ page_error }}</div>
+    {% endif %}
+
+    {% if not criteria %}
+    <div class="card empty-state">
+        <span class="icon-tile">{% include "includes/icon.html" with name="file-text" %}</span>
+        <p>This event has no active rubric yet, so there is nothing to score.</p>
+    </div>
+    {% elif not rows %}
+    <div class="card empty-state">
+        <span class="icon-tile">{% include "includes/icon.html" with name="folder" %}</span>
+        <p>You have no assignments in this event yet.</p>
+    </div>
+    {% else %}
+    <p class="rubric-summary">
+        <span class="text-muted">Rubric:</span>
+        {% for criterion in criteria %}
+        <span class="tag">{{ criterion.name|capfirst }} &middot; 1&ndash;{{ criterion.max_score }}{% if criterion.weight != 1 %} &middot; weight {{ criterion.weight }}{% endif %}</span>
+        {% endfor %}
+    </p>
+
+    <div class="score-list">
+        {% for row in rows %}
+        {% with assignment=row.assignment submission=row.assignment.submission %}
+        <section class="card score-card" id="assignment-{{ assignment.pk }}" aria-labelledby="assignment-{{ assignment.pk }}-title">
+            <div class="score-card-head">
+                <span class="art art-sm" style="{% art_vars 'submission' submission.pk %}" aria-hidden="true"></span>
+                <div class="score-card-title">
+                    <h2 id="assignment-{{ assignment.pk }}-title" class="card-title">
+                        <a href="{% url 'submissions:project_detail' pk=submission.pk %}">{{ submission.title }}</a>
+                    </h2>
+                    <div class="score-card-meta">
+                        {% if submission.track %}
+                        <span class="tag tag-track" style="--hue: {{ submission.track|track_hue }}">{{ submission.track.name }}</span>
+                        {% endif %}
+                        <span class="badge badge-{{ row.state }}">{{ row.state_label }}</span>
+                        <span class="text-muted">{{ row.done }}/{{ criteria|length }} scored</span>
+                    </div>
+                </div>
+            </div>
+
+            {% if row.error %}
+            <div class="alert alert-error" role="alert" id="assignment-{{ assignment.pk }}-error">{{ row.error }}</div>
+            {% endif %}
+
+            <form method="post" class="score-form" action="{% url 'judging_web:scoring_dashboard' slug=event.slug %}#assignment-{{ assignment.pk }}">
+                {% csrf_token %}
+                <input type="hidden" name="assignment_id" value="{{ assignment.pk }}">
+                <div class="score-fields">
+                    {% for field in row.fields %}
+                    <div class="form-group">
+                        <label for="{{ field.id }}">
+                            {{ field.criterion.name|capfirst }}
+                            <span class="text-muted">(1&ndash;{{ field.criterion.max_score }})</span>
+                        </label>
+                        <input type="number" inputmode="numeric" id="{{ field.id }}" name="{{ field.name }}"
+                               min="1" max="{{ field.criterion.max_score }}" step="1" value="{{ field.value }}"
+                               {% if row.error %}aria-describedby="assignment-{{ assignment.pk }}-error"{% endif %}>
+                    </div>
+                    {% endfor %}
+                </div>
+                <button type="submit" class="btn btn-primary">Save scores</button>
+            </form>
+        </section>
+        {% endwith %}
+        {% endfor %}
+    </div>
+    {% endif %}
+</div>
+{% endblock %}

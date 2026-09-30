@@ -4,9 +4,12 @@ import io
 import json
 from collections import defaultdict
 
+from django.contrib import messages
 from django.contrib.auth.decorators import login_required
+from django.db import transaction
 from django.http import HttpResponse, HttpResponseBadRequest, HttpResponseForbidden
-from django.shortcuts import get_object_or_404, render
+from django.shortcuts import get_object_or_404, redirect, render
+from django.urls import reverse
 from django.views.decorators.http import require_GET, require_http_methods
 from rest_framework import status as http_status
 from rest_framework.authentication import SessionAuthentication, TokenAuthentication
@@ -689,3 +692,97 @@ def pairwise_dashboard(request, slug):
     if request.headers.get("HX-Request") == "true":
         return render(request, "judging/pairwise_content.html", context)
     return render(request, "judging/pairwise.html", context)
+
+
+def _score_error_text(payload):
+    """Flatten an API-style error body into readable sentences."""
+    parts = []
+    for value in payload.values():
+        parts.extend(value if isinstance(value, (list, tuple)) else [value])
+    return " ".join(str(part) for part in parts)
+
+
+@login_required
+@require_http_methods(["GET", "POST"])
+def scoring_dashboard(request, slug):
+    """Rubric scoring for the signed-in judge's own assignments.
+
+    Every value is saved through save_judge_score(), the same function behind
+    POST/PUT/PATCH /api/judge/scores, so ownership, track scope, event,
+    active-rubric and range rules and the audit entry are identical. One form
+    is saved atomically: if any value is refused, none of them are stored.
+    """
+    event = get_object_or_404(Event, slug=slug)
+    if event_role(request.user, event) != EventMembership.Role.JUDGE:
+        return HttpResponseForbidden("Active judge access is required.")
+    criteria = list(
+        RubricCriterion.objects.filter(rubric__event=event, rubric__is_active=True).order_by("rubric_id", "pk")
+    )
+
+    status = 200
+    form_errors, entered = {}, {}
+    if request.method == "POST":
+        try:
+            assignment_id = int(request.POST.get("assignment_id", ""))
+        except ValueError:
+            return HttpResponseBadRequest("assignment_id must be an integer.")
+        values = {c.pk: request.POST.get(f"criterion_{c.pk}", "").strip() for c in criteria}
+        to_save = {criterion_id: value for criterion_id, value in values.items() if value != ""}
+        try:
+            if not to_save:
+                raise ScoreWriteError({"error": "Enter at least one score before saving."}, 400)
+            with transaction.atomic():
+                for criterion_id, value in to_save.items():
+                    save_judge_score(request.user, assignment_id, criterion_id, value)
+        except ScoreWriteError as exc:
+            status = exc.status
+            form_errors[assignment_id] = _score_error_text(exc.payload)
+            entered[assignment_id] = values
+        else:
+            messages.success(request, f"Saved {len(to_save)} score{'s' if len(to_save) != 1 else ''}.")
+            url = reverse("judging_web:scoring_dashboard", kwargs={"slug": event.slug})
+            return redirect(f"{url}#assignment-{assignment_id}")
+
+    assignments = (
+        JudgeAssignment.objects.filter(event=event, judge=request.user)
+        .select_related("submission", "submission__track")
+        .prefetch_related("scores")
+        .order_by("submission__title", "pk")
+    )
+    rows = []
+    for assignment in assignments:
+        saved = {score.criterion_id: score.value for score in assignment.scores.all()}
+        done = sum(1 for criterion in criteria if criterion.pk in saved)
+        if criteria and done == len(criteria):
+            state, label = "complete", "Complete"
+        elif done:
+            state, label = "partial", "Partial"
+        else:
+            state, label = "not-started", "Not started"
+        shown = entered.get(assignment.pk, {})
+        rows.append({
+            "assignment": assignment,
+            "state": state,
+            "state_label": label,
+            "done": done,
+            "error": form_errors.get(assignment.pk),
+            "fields": [
+                {
+                    "criterion": criterion,
+                    "name": f"criterion_{criterion.pk}",
+                    "id": f"score-{assignment.pk}-{criterion.pk}",
+                    "value": shown.get(criterion.pk, saved.get(criterion.pk, "")),
+                }
+                for criterion in criteria
+            ],
+        })
+    own_ids = {row["assignment"].pk for row in rows}
+    return render(request, "judging/scoring.html", {
+        "event": event,
+        "criteria": criteria,
+        "rows": rows,
+        "complete_count": sum(1 for row in rows if row["state"] == "complete"),
+        # A refused write for an assignment that is not on this page (e.g. an
+        # edited form field) is reported at page level.
+        "page_error": next((text for key, text in form_errors.items() if key not in own_ids), None),
+    }, status=status)

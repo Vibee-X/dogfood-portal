@@ -150,7 +150,10 @@ def main():
         f"{sum(1 for a in assignments if a['criteria'])} included reviews, "
         f"{sum(len(a['criteria']) for a in assignments)} criterion values"
     )
-    print("Criteria: " + ", ".join(f"{c['name']} (weight {c['weight']:g}, max {c['max_score']})" for c in criteria))
+    # Name order: criterion ids and creation order can differ between installs.
+    print("Criteria: " + ", ".join(
+        f"{c['name']} (weight {c['weight']:g}, max {c['max_score']})" for c in sorted(criteria, key=lambda c: c["name"])
+    ))
     print("Raw = weighted fraction of the maximum (0..1). Normalized = mean per-judge z-score.")
     print("Ranks: 1 = best; ties share the best rank. Change = raw rank - normalized rank (+ = moved up).")
 

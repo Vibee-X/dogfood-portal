@@ -100,6 +100,18 @@
     </section>
     {% endif %}
 
+    {% if is_judge %}
+    <section class="card detail-section" aria-labelledby="judging-heading">
+        <h2 id="judging-heading" class="section-title">
+            <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="check-circle" size=16 %}</span> Judging
+        </h2>
+        <div class="action-row">
+            <a href="{% url 'judging_web:scoring_dashboard' slug=event.slug %}" class="btn btn-primary">Score my assignments</a>
+            <a href="{% url 'judging_web:pairwise_dashboard' slug=event.slug %}" class="btn">Pairwise judging</a>
+        </div>
+    </section>
+    {% endif %}
+
     {% if user.is_authenticated %}
     <section class="card detail-section" aria-labelledby="participate-heading">
         <h2 id="participate-heading" class="section-title">

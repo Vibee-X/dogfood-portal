@@ -15,6 +15,7 @@ Prints ready-to-paste .dogfood.toml [auth] lines to stdout.
 import json
 import os
 import sys
+from collections import Counter
 from pathlib import Path
 from datetime import datetime
 
@@ -39,11 +40,12 @@ from apps.accounts.models import EventMembership
 from apps.judging.models import (
     JudgeAssignment, JudgeTrack, NormalizationRun, Rubric, RubricCriterion, Score,
 )
-from apps.judging.services import run_normalization
+from apps.judging.services import judge_can_review_submission, run_normalization
 
 User = get_user_model()
 
 DEFAULT_PASSWORD = "dogfood2026"
+DEMO_BATCH_ID = "seed-demo-judges"
 DEFAULT_PASSWORD_HASH = make_password(DEFAULT_PASSWORD)
 
 
@@ -289,5 +291,59 @@ def seed():
     print("=" * 60)
 
 
+@transaction.atomic
+def seed_demo_assignments():
+    """Give the named demo judges real, unscored work (idempotent).
+
+    Kept separate from seed(), which stays a faithful import of the fixture.
+    The fixture's unfinished batches leave some projects below the event's
+    reviews_per_submission. Each such project gets the missing reviews as
+    pending assignments for judge_a and judge_b, alternating in fixture-id
+    order, so the judge scoring page has work on a fresh install. Selection
+    comes from the fixture file, so repeated runs pick the same projects, and
+    get_or_create on (judge, submission) never duplicates a row. Every
+    assignment passes the app's own rules (judge_can_review_submission and
+    JudgeAssignment.full_clean) before it is written. This runs after the
+    normalization snapshot, so the stored fixture results are unchanged.
+    """
+    data = load_fixtures()
+    event = Event.objects.get(slug=data["event"]["id"])
+    judges = [User.objects.get(username="judge_a"), User.objects.get(username="judge_b")]
+    submissions = {
+        s.fixture_id: s
+        for s in Submission.objects.filter(event=event, fixture_id__isnull=False).select_related("team")
+    }
+    fixture_judges = {j["id"] for j in data["judges"]}
+    reviews = Counter(
+        s["project"] for s in data["scores"] if s["project"] in submissions and s["judge"] in fixture_judges
+    )
+    target = event.reviews_per_submission
+    under_target = sorted(fid for fid in submissions if reviews[fid] < target)
+
+    created, existing, placed = 0, 0, []
+    for index, fixture_id in enumerate(under_target):
+        submission = submissions[fixture_id]
+        for offset in range(min(target - reviews[fixture_id], len(judges))):
+            judge = judges[(index + offset) % len(judges)]
+            if not judge_can_review_submission(judge, event, submission):
+                raise ValueError(f"{judge.username} is not eligible to review {fixture_id}")
+            JudgeAssignment(event=event, judge=judge, submission=submission, batch_id=DEMO_BATCH_ID).full_clean(
+                validate_unique=False, validate_constraints=False,
+            )
+            _, was_created = JudgeAssignment.objects.get_or_create(
+                judge=judge,
+                submission=submission,
+                defaults={"event": event, "batch_id": DEMO_BATCH_ID},
+            )
+            created += was_created
+            existing += not was_created
+            placed.append(f"{fixture_id}->{judge.username}")
+    print(
+        f"[ok] Demo judge assignments: {created} created, {existing} already present "
+        f"({', '.join(placed) or 'no project below target'})"
+    )
+
+
 if __name__ == "__main__":
     seed()
+    seed_demo_assignments()

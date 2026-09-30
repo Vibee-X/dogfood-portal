@@ -44,8 +44,8 @@ All accounts use password: `dogfood2026`
 | Role | Username | Purpose |
 |------|----------|---------|
 | Organizer | `organizer` | Can create/edit events, view all scores, export CSV |
-| Judge A | `judge_a` | Can view own scores |
-| Judge B | `judge_b` | Can view own scores, blocked from judge_a's scores |
+| Judge A | `judge_a` | Scores own assignments at `/events/evt_01/judging/scores/`; can view own scores |
+| Judge B | `judge_b` | Same as Judge A for own assignments; blocked from judge_a's scores |
 | Participant | `participant` | Can submit projects (when deadline permits) |
 
 Demo process: browse the public gallery as an anonymous visitor, sign in with
@@ -53,6 +53,10 @@ one of the accounts above to exercise its server-enforced role, or copy a token
 line emitted by the seed script into a request as `Authorization: Token <key>`.
 The committed `.dogfood.toml` contains placeholders only; never commit a
 seeded token.
+
+**Try it:** sign in as `judge_a`, save a score at `/events/evt_01/judging/scores/`,
+then sign in as `organizer` and open `/events/evt_01/audit/` to see the
+`score.created` entry it wrote.
 
 ## Running the Acceptance Checker
 
@@ -84,6 +88,12 @@ surface, token header, and server-enforced role restrictions.
 
 - **Judging integrity**: Event rubrics, scoped judge assignments, own-score
   isolation, audit logging, normalization snapshots, and organizer CSV export.
+- **Judge scoring page**: Judges score their own assignments at
+  `/events/<event-slug>/judging/scores/` (one input per active rubric
+  criterion, prefilled, with Not started / Partial / Complete status). Saves go
+  through the same function as `/api/judge/scores`, so the ownership, scope,
+  rubric and range rules and the audit entry are identical. The seed gives
+  `judge_a` and `judge_b` four unscored assignments each (see `JUDGING.md`).
 - **Audit log page**: Organizers and event admins get a read-only, filterable,
   paginated audit trail per event at `/events/<event-slug>/audit/`, linked
   from the event page and the judging progress page.
@@ -111,13 +121,16 @@ surface, token header, and server-enforced role restrictions.
 - Fixture URLs are preserved as fixture content. The portal does not fetch
   them during startup or normal operation.
 - Several judging steps have no web page and are API-only (documented at
-  `/api/schema/`): rubric scoring (`/api/judge/scores`), rubric and criterion
-  setup (`/api/judging/rubrics`), judge invitations
+  `/api/schema/`): rubric and criterion setup (`/api/judging/rubrics`), judge
+  invitations
   (`/api/judging/judges/invite`), assignment generation
   (`/api/judging/assignments/generate`), pairwise pair generation
   (`/api/judging/pairwise/generate`) and normalization runs
-  (`/api/judging/normalization/run`). The web UI covers making pairwise
-  choices and the organizer progress table.
+  (`/api/judging/normalization/run`). The web UI covers rubric scoring,
+  making pairwise choices, the organizer progress table and the audit log.
+- Neither the scoring API nor the scoring page enforces the event's judging
+  window (`judging_start` / `judging_end`); judges can score whenever they
+  hold an assignment.
 - There is no results page. Normalized results are available through the
   organizer/admin CSV export (`/api/export.csv`, which the UI does not link
   to) and `scripts/normalization_report.py`; community votes through

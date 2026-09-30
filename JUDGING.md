@@ -30,6 +30,13 @@ judge owns the assignment, the assignment is in scope, the criterion belongs
 to the same event, the rubric is active, and `1 <= value <= max_score`. A
 write creates `AuditLog` entry `score.created` or `score.updated`.
 
+Judges can also score in the browser at `/events/<event-slug>/judging/scores/`,
+which lists only the signed-in judge's own assignments in that event. Both the
+API and the page call `apps.judging.services.save_judge_score()`, so they apply
+the same checks in the same order and write the same audit entries; the page
+saves one project's form atomically, so a refused value stores nothing. The
+judging window (`judging_start` / `judging_end`) is not enforced by either.
+
 ## Normalization
 
 `NormalizationRun` is a reproducibility record, not a second scoring system.
@@ -175,6 +182,16 @@ is uneven coverage: 8 projects have 2 reviews, 26 have 3, 3 have 4 and 4 have
 mean averages two z-scores. Every fixture review scores all three criteria, so
 the partial-review rule (observed weights only) is exercised by the test
 described above, not by this data.
+
+After the snapshot is stored, `scripts/seed.py` also gives the named demo judges
+work so the scoring page is not empty on a fresh install: each of those eight
+projects gets one unscored assignment, alternating `judge_a` and `judge_b` in
+fixture-id order (`judge_a`: `prj_10`, `prj_18`, `prj_24`, `prj_39`; `judge_b`:
+`prj_15`, `prj_19`, `prj_29`, `prj_40`). They pass the same eligibility and
+model validation as any assignment, are created with `get_or_create` so a
+repeated seed adds nothing, and do not appear in the stored snapshot or change
+any number above. A normalization run made after a demo judge scores will, of
+course, include that review.
 
 ### The duplicate submission
 

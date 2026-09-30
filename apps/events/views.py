@@ -86,6 +86,12 @@ def event_detail(request, slug):
     """View event details."""
     event = get_object_or_404(Event, slug=slug)
     is_org = _is_organizer(request.user, event)
+    is_judge = request.user.is_authenticated and EventMembership.objects.filter(
+        user=request.user,
+        event=event,
+        role=EventMembership.Role.JUDGE,
+        status=EventMembership.Status.ACTIVE,
+    ).exists()
     tracks = event.tracks.all()
     prizes = event.prizes.all()
     participation_certificate = None
@@ -105,6 +111,7 @@ def event_detail(request, slug):
     return render(request, "events/event_detail.html", {
         "event": event,
         "is_organizer": is_org,
+        "is_judge": is_judge,
         "tracks": tracks,
         "prizes": prizes,
         "can_request_certificate": can_request_certificate,

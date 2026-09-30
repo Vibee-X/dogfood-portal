@@ -1710,6 +1710,76 @@ body.embed main.container { padding-top: var(--space-lg); }
     color: var(--color-text-muted);
 }
 
+/* Judge scoring page */
+.badge-complete {
+    color: var(--color-success);
+    background: var(--color-success-soft);
+    border-color: var(--color-success-border);
+}
+.badge-partial {
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    border-color: var(--color-accent-border);
+}
+.badge-not-started {
+    color: var(--color-neutral);
+    background: var(--color-neutral-soft);
+    border-color: var(--color-neutral-border);
+}
+.rubric-summary {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem;
+    margin-bottom: var(--space-md);
+    font-size: var(--font-size-sm);
+}
+.rubric-summary .tag { margin: 0; }
+.score-list {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 1.1rem;
+}
+.score-card {
+    display: flex;
+    flex-direction: column;
+    gap: 0.9rem;
+    scroll-margin-top: calc(var(--navbar-height) + 2rem);
+}
+.score-card-head {
+    display: flex;
+    align-items: center;
+    gap: 0.9rem;
+}
+.score-card-title { min-width: 0; }
+.score-card .card-title {
+    margin: 0 0 0.35rem;
+    font-size: 1.05rem;
+}
+.score-card .card-title a { color: var(--color-text-heading); }
+.score-card .card-title a:hover { color: var(--color-primary); }
+.score-card-meta {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 0.4rem 0.6rem;
+    font-size: var(--font-size-xs);
+}
+.score-card-meta .tag { margin: 0; }
+.score-card .alert { margin: 0; }
+.score-form {
+    display: flex;
+    flex-direction: column;
+    gap: 0.75rem;
+}
+.score-fields {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(7.5rem, 1fr));
+    gap: 0.6rem;
+}
+.score-fields .form-group { margin: 0; }
+.score-form .btn { align-self: flex-start; }
+
 /* Certificate (page keeps its own print rules inline) */
 .certificate { padding: 2.5rem 2rem; }
 .certificate h1 {
@@ -1883,6 +1953,7 @@ main.container > .mt-3 > h1 {
     .track-field select { min-width: 0; }
     .project-grid { grid-template-columns: 1fr; }
     .audit-filter { flex-wrap: wrap; }
+    .score-list { grid-template-columns: 1fr; }
     .audit-filter .select-wrap { flex: 1 1 auto; }
     .audit-filter select { min-width: 0; }
 
