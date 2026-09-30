@@ -43,44 +43,64 @@
 
     <section class="event-list" aria-label="{% if status_filter_label %}{{ status_filter_label }} events{% else %}All events{% endif %}">
         {% for event in events %}
+        {% event_glyph event.slug as glyph %}
         <a href="{% url 'events:event_detail' slug=event.slug %}" class="card card-interactive event-card">
-            <span class="art art-md" style="{% art_vars 'event' event.slug %}" aria-hidden="true"></span>
-            <div class="event-card-body">
-                <div class="event-card-head">
-                    <h2 class="card-title">{{ event.name }}</h2>
-                    <span class="badge badge-{{ event.status }}">
-                        {% if event.status == "ongoing" %}{% include "includes/icon.html" with name="play-circle" %}{% elif event.status == "past" %}{% include "includes/icon.html" with name="history" %}{% else %}{% include "includes/icon.html" with name="clock" %}{% endif %}
-                        {{ event.status_label }}
-                    </span>
+            <div class="event-card-top">
+                <span class="art art-md event-art" style="{% art_vars 'event' event.slug %}" aria-hidden="true">
+                    <span class="art-glyph">{% include "includes/icon.html" with name=glyph size=34 %}</span>
+                </span>
+                <div class="event-card-heading">
+                    <div class="event-card-head">
+                        <h2 class="card-title">{{ event.name }}</h2>
+                        <span class="badge badge-{{ event.status }}">
+                            {% if event.status == "ongoing" %}{% include "includes/icon.html" with name="play-circle" %}{% elif event.status == "past" %}{% include "includes/icon.html" with name="history" %}{% else %}{% include "includes/icon.html" with name="clock" %}{% endif %}
+                            {{ event.status_label }}
+                        </span>
+                    </div>
+                    <p class="event-dates">
+                        {% include "includes/icon.html" with name="calendar" size=15 %}
+                        {% if event.start_date and event.end_date %}
+                            {% if event.start_date|date:"Y" == event.end_date|date:"Y" %}{{ event.start_date|date:"M d" }}{% else %}{{ event.start_date|date:"M d, Y" }}{% endif %} &ndash; {{ event.end_date|date:"M d, Y" }}
+                        {% elif event.start_date %}Starts {{ event.start_date|date:"M d, Y" }}
+                        {% elif event.end_date %}Ends {{ event.end_date|date:"M d, Y" }}
+                        {% else %}Dates to be announced{% endif %}
+                    </p>
+                    {% if event.track_chips %}
+                    <ul class="chip-row" aria-label="Tracks">
+                        {% for name in event.track_chips %}
+                        <li class="tag tag-track" style="--hue: {{ name|track_hue }}">{{ name }}</li>
+                        {% endfor %}
+                        {% if event.more_tracks %}<li class="tag tag-more">+{{ event.more_tracks }}<span class="sr-only"> more track{{ event.more_tracks|pluralize }}</span></li>{% endif %}
+                    </ul>
+                    {% endif %}
                 </div>
-                {% if event.description %}
-                <p class="event-card-desc">{{ event.description|truncatewords:24 }}</p>
-                {% endif %}
-                <dl class="stat-row">
-                    <div class="stat">
-                        <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="calendar" size=16 %}</span>
-                        <div>
-                            <dt>Deadline</dt>
-                            <dd>{% if event.submission_deadline %}{{ event.submission_deadline|date:"M d, Y H:i" }}{% else %}Not set{% endif %}</dd>
-                        </div>
-                    </div>
-                    <div class="stat">
-                        <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="folder" size=16 %}</span>
-                        <div>
-                            <dt>Projects</dt>
-                            <dd>{{ event.project_count }} submitted</dd>
-                        </div>
-                    </div>
-                    <div class="stat">
-                        <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="layers" size=16 %}</span>
-                        <div>
-                            <dt>Tracks</dt>
-                            <dd>{{ event.track_count }} track{{ event.track_count|pluralize }}</dd>
-                        </div>
-                    </div>
-                </dl>
+                <span class="round-arrow" aria-hidden="true">{% include "includes/icon.html" with name="chevron-right" %}</span>
             </div>
-            <span class="round-arrow" aria-hidden="true">{% include "includes/icon.html" with name="chevron-right" %}</span>
+            {% if event.description %}
+            <p class="event-card-desc clamp-3">{{ event.description }}</p>
+            {% endif %}
+            <dl class="stat-grid">
+                <div class="stat">
+                    <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="clock" size=16 %}</span>
+                    <div><dt>Deadline</dt><dd>{% if event.submission_deadline %}{{ event.submission_deadline|date:"M d, Y H:i" }}{% else %}Not set{% endif %}</dd></div>
+                </div>
+                <div class="stat">
+                    <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="folder" size=16 %}</span>
+                    <div><dt>Projects</dt><dd>{{ event.project_count }} submitted</dd></div>
+                </div>
+                <div class="stat">
+                    <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="layers" size=16 %}</span>
+                    <div><dt>Tracks</dt><dd>{{ event.track_count }}</dd></div>
+                </div>
+                <div class="stat">
+                    <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="trophy" size=16 %}</span>
+                    <div><dt>Prizes</dt><dd>{{ event.prize_count }}</dd></div>
+                </div>
+                <div class="stat">
+                    <span class="icon-tile icon-tile-sm">{% include "includes/icon.html" with name="users" size=16 %}</span>
+                    <div><dt>Teams</dt><dd>{{ event.team_count }}</dd></div>
+                </div>
+            </dl>
         </a>
         {% empty %}
         <div class="card empty-state">

@@ -6,7 +6,8 @@ from django.contrib.auth.decorators import login_required
 from django.core.paginator import Paginator
 from django.http import HttpResponseForbidden
 from django.contrib import messages
-from django.db.models import Count, Q
+from django.db.models import Count, IntegerField, OuterRef, Prefetch, Subquery
+from django.db.models.functions import Coalesce
 from django.views.decorators.http import require_GET
 from .models import Event, Track, Prize
 from .forms import EventForm, TrackForm, PrizeForm
@@ -15,8 +16,10 @@ from apps.core.audit import TARGET_LABELS, event_audit_entries
 from apps.core.models import Certificate
 from apps.judging.models import JudgeAssignment, RubricCriterion
 from apps.submissions.models import Submission
+from apps.teams.models import Team
 
 AUDIT_PAGE_SIZE = 25
+TRACK_CHIP_LIMIT = 4
 _SUBMISSION_KEYS = ("submission_id", "submission_a_id", "submission_b_id", "winner_id")
 
 
@@ -32,18 +35,32 @@ def _is_organizer(user, event):
     ).exists()
 
 
+def _related_count(queryset):
+    """Count of ``queryset`` rows whose ``event`` is the outer event, as a subquery."""
+    counted = (
+        queryset.filter(event=OuterRef("pk"))
+        .order_by()
+        .values("event")
+        .annotate(n=Count("pk"))
+        .values("n")
+    )
+    return Coalesce(Subquery(counted, output_field=IntegerField()), 0)
+
+
 def event_list(request):
     """List all published events, optionally filtered by ?status=."""
+    # Each count is a correlated subquery, so the page stays at two queries
+    # (events + one prefetch of track names) however many events there are,
+    # and the counts never multiply through joins.
     events = (
         Event.objects.filter(is_published=True)
         .annotate(
-            project_count=Count(
-                "submissions",
-                filter=Q(submissions__status=Submission.Status.SUBMITTED),
-                distinct=True,
-            ),
-            track_count=Count("tracks", distinct=True),
+            project_count=_related_count(Submission.objects.filter(status=Submission.Status.SUBMITTED)),
+            track_count=_related_count(Track.objects.all()),
+            prize_count=_related_count(Prize.objects.all()),
+            team_count=_related_count(Team.objects.all()),
         )
+        .prefetch_related(Prefetch("tracks", queryset=Track.objects.order_by("name")))
         .order_by("-created_at")
     )
     status_filter = request.GET.get("status", "").strip().lower()
@@ -53,6 +70,11 @@ def event_list(request):
         # Status is derived in Python from the event's dates (Event.status),
         # so filter with the same rule the badges use.
         events = [event for event in events if event.status == status_filter]
+    events = list(events)
+    for event in events:
+        names = [track.name for track in event.tracks.all()]  # prefetched, no query
+        event.track_chips = names[:TRACK_CHIP_LIMIT]
+        event.more_tracks = max(len(names) - TRACK_CHIP_LIMIT, 0)
     return render(request, "events/event_list.html", {
         "events": events,
         "status_filter": status_filter,

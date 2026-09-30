@@ -38,6 +38,19 @@ def art_vars(kind, key):
     )
 
 
+# Glyphs available in templates/includes/icon.html, used as event icons.
+EVENT_GLYPHS = (
+    "rocket", "sparkles", "trophy", "compass", "globe",
+    "layers", "award", "calendar-check", "zap", "code",
+)
+
+
+@register.simple_tag
+def event_glyph(slug):
+    """Stable icon name for an event, picked from EVENT_GLYPHS by its slug."""
+    return EVENT_GLYPHS[_digest("glyph", slug)[0] % len(EVENT_GLYPHS)]
+
+
 @register.filter
 def track_hue(track):
     """Stable hue (0-359) for a track, derived from its name."""

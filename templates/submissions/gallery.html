@@ -31,15 +31,18 @@
 
 <section class="project-grid" aria-label="Projects">
     {% for submission in submissions %}
-    <a href="{% url 'submissions:project_detail' pk=submission.pk %}" class="card card-interactive project-card">
-        <span class="art" style="{% art_vars 'submission' submission.pk %}" aria-hidden="true"></span>
+    <a href="{% url 'submissions:project_detail' pk=submission.pk %}" class="card card-interactive project-card project-card-lg">
+        <span class="art art-lg" style="{% art_vars 'submission' submission.pk %}" aria-hidden="true"></span>
         <div class="project-card-body">
             <h2 class="card-title">{{ submission.title }}</h2>
             {% if submission.track %}
             <span class="tag tag-track" style="--hue: {{ submission.track|track_hue }}">{{ submission.track.name }}</span>
             {% endif %}
+            {% with blurb=submission.tagline|default:submission.summary %}
+            {% if blurb %}<p class="project-card-summary clamp-2">{{ blurb }}</p>{% endif %}
+            {% endwith %}
             <div class="project-card-meta">
-                <span>Team: {{ submission.team.name }}</span>
+                <span class="meta-item">{% include "includes/icon.html" with name="users" size=14 %} <span class="sr-only">Team:</span> {{ submission.team.name }}</span>
                 {% if submission.submitted_at %}
                 <span class="meta-item">
                     {% include "includes/icon.html" with name="calendar" size=14 %}
@@ -47,6 +50,13 @@
                 </span>
                 {% endif %}
             </div>
+            {% if submission.repo_url or submission.live_url or submission.demo_video_url %}
+            <ul class="link-indicators" aria-label="Available links">
+                {% if submission.repo_url %}<li>{% include "includes/icon.html" with name="github" size=13 %} Repo</li>{% endif %}
+                {% if submission.live_url %}<li>{% include "includes/icon.html" with name="globe" size=13 %} Live demo</li>{% endif %}
+                {% if submission.demo_video_url %}<li>{% include "includes/icon.html" with name="video" size=13 %} Video</li>{% endif %}
+            </ul>
+            {% endif %}
         </div>
         <span class="round-arrow" aria-hidden="true">{% include "includes/icon.html" with name="chevron-right" %}</span>
     </a>
