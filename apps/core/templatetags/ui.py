@@ -4,6 +4,7 @@ Nothing here touches the database or changes behaviour: the helpers derive
 stable visual values (thumbnail art, track colours) from existing data.
 """
 import hashlib
+import re
 
 from django import template
 
@@ -57,6 +58,21 @@ def track_hue(track):
     name = getattr(track, "name", track) or ""
     # 24 evenly spaced slots keep neighbouring tracks visibly distinct.
     return (_digest("track", name.strip().lower())[0] % 24) * 15
+
+
+@register.filter
+def initials(text):
+    """Up to two initials for a thumbnail, e.g. "Dry Harbour" -> "DH".
+
+    Uses the first letters of the first two words; a one-word title gives its
+    first two characters. Letters and digits only, so punctuation is skipped.
+    """
+    words = re.findall(r"[^\W_]+", str(text or ""))
+    if not words:
+        return ""
+    if len(words) == 1:
+        return words[0][:2].upper()
+    return (words[0][0] + words[1][0]).upper()
 
 
 @register.filter

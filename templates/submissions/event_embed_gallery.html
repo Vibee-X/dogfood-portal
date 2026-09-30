@@ -34,7 +34,7 @@
         <section class="project-grid" aria-label="Submitted projects">
             {% for submission in submissions %}
             <article class="card project-card">
-                <span class="art" style="{% art_vars 'submission' submission.pk %}" aria-hidden="true"></span>
+                <span class="art" style="{% art_vars 'submission' submission.pk %}" aria-hidden="true"><span class="art-initials" aria-hidden="true">{{ submission.title|initials }}</span></span>
                 <div class="project-card-body">
                     <h2 class="card-title">{{ submission.title }}</h2>
                     {% if submission.summary %}<p class="project-card-summary">{{ submission.summary|truncatewords:20 }}</p>{% endif %}

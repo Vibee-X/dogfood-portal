@@ -1116,8 +1116,9 @@ tbody tr:last-child td { border-bottom: 0; }
     background:
         radial-gradient(circle at var(--x1) var(--y1), hsl(var(--h1) 95% 86% / 0.95) 0%, transparent 40%),
         radial-gradient(ellipse at var(--x2) var(--y2), hsl(var(--h2) 90% 64% / 0.9) 0%, transparent 58%),
-        linear-gradient(var(--rot), hsl(var(--h3) 82% 58%) 0%, hsl(var(--h1) 78% 66%) 50%, hsl(var(--h2) 85% 74%) 100%);
+        linear-gradient(calc(var(--rot) + var(--rot-shift)), hsl(var(--h3) 82% 58%) 0%, hsl(var(--h1) 78% 66%) 50%, hsl(var(--h2) 85% 74%) 100%);
     box-shadow: var(--art-ring), var(--art-shadow);
+    transition: --rot-shift 0.3s ease, transform 0.25s ease, filter 0.25s ease, box-shadow 0.25s ease;
 }
 /* Glossy liquid blob */
 .art::before {
@@ -1132,6 +1133,7 @@ tbody tr:last-child td { border-bottom: 0; }
         radial-gradient(circle at 34% 30%, rgba(255, 255, 255, 0.92) 0%, hsl(var(--h2) 95% 88% / 0.85) 16%, hsl(var(--h1) 85% 64% / 0.55) 52%, transparent 74%);
     transform: rotate(var(--br));
     filter: blur(1.5px);
+    transition: transform 0.3s ease;
 }
 /* Sheen */
 .art::after {
@@ -1141,6 +1143,61 @@ tbody tr:last-child td { border-bottom: 0; }
     background: linear-gradient(155deg, rgba(255, 255, 255, 0.38) 0%, rgba(255, 255, 255, 0) 42%);
 }
 .art-sm { width: 3.25rem; border-radius: 10px; }
+
+/* Registered so the gradient angle can transition (instant where unsupported) */
+@property --rot-shift {
+    syntax: '<angle>';
+    inherits: false;
+    initial-value: 0deg;
+}
+
+/* Initials on project tiles. The tile colours are the same in both themes,
+   so white text with a dark halo stays legible in light and dark. */
+.art-initials {
+    position: relative;
+    z-index: 1;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    width: 100%;
+    height: 100%;
+    font-size: 1.55rem;
+    font-weight: 800;
+    letter-spacing: 0.03em;
+    line-height: 1;
+    color: #fff;
+    text-shadow: 0 1px 2px rgba(24, 8, 72, 0.65), 0 0 14px rgba(40, 14, 120, 0.45);
+    user-select: none;
+}
+.art-lg .art-initials { font-size: 2rem; }
+
+/* Hover and keyboard focus on list cards: the tile's gradient turns and the
+   glossy blob rotates, the tile grows a little, the card lifts. */
+a.card-interactive {
+    transition: border-color 0.25s ease, box-shadow 0.25s ease, background 0.25s ease, transform 0.25s ease;
+}
+a.card-interactive:focus-within {
+    border-color: var(--color-border-hover);
+    background: var(--color-surface-elevated);
+    box-shadow: var(--glass-inset-strong), var(--shadow-lg);
+    transform: translateY(-2px);
+}
+a.card-interactive:hover .art,
+a.card-interactive:focus-within .art {
+    --rot-shift: 70deg;
+    transform: scale(1.06);
+    filter: saturate(1.2) brightness(1.06);
+    box-shadow: var(--art-ring), 0 14px 28px -14px rgba(76, 40, 190, 0.75);
+}
+a.card-interactive:hover .art::before,
+a.card-interactive:focus-within .art::before {
+    transform: rotate(calc(var(--br) + 40deg)) scale(1.08);
+}
+a.card-interactive:focus-within .round-arrow {
+    color: #fff;
+    background: var(--color-primary-gradient);
+    border-color: transparent;
+}
 .art-lg { width: 7.5rem; border-radius: var(--radius-lg); }
 
 /* --------------------------------------------------------------------------
@@ -2159,6 +2216,15 @@ html.no-transitions *::after {
         transition-duration: 0.01ms !important;
     }
     .blob { animation: none; }
+    a.card-interactive:hover .art,
+    a.card-interactive:focus-within .art {
+        --rot-shift: 0deg;
+        transform: none;
+    }
+    a.card-interactive:hover .art::before,
+    a.card-interactive:focus-within .art::before { transform: rotate(var(--br)); }
+    a.card-interactive:focus-within,
+    a.card-interactive:focus-within .round-arrow { transform: none; }
     .card-link:hover > .card,
     .card-interactive:hover,
     .btn:active,

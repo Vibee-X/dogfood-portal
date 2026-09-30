@@ -32,7 +32,7 @@
 <section class="project-grid" aria-label="Projects">
     {% for submission in submissions %}
     <a href="{% url 'submissions:project_detail' pk=submission.pk %}" class="card card-interactive project-card project-card-lg">
-        <span class="art art-lg" style="{% art_vars 'submission' submission.pk %}" aria-hidden="true"></span>
+        <span class="art art-lg" style="{% art_vars 'submission' submission.pk %}" aria-hidden="true"><span class="art-initials" aria-hidden="true">{{ submission.title|initials }}</span></span>
         <div class="project-card-body">
             <h2 class="card-title">{{ submission.title }}</h2>
             {% if submission.track %}
