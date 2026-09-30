@@ -528,8 +528,10 @@ def run_normalization(event):
     A partially completed review uses only its observed criterion weights. An
     assignment without any score is omitted from the ranking. A judge with
     fewer than two observed reviews or zero population standard deviation gets
-    z=0 for every review: their constant scale contributes no artificial rank
-    signal and never divides by zero.
+    z=0 for every review, which never divides by zero and stops a constant
+    scale from ordering projects. Those zeros are still averaged into project
+    means, pulling a project toward the event average and diluting the other
+    judges' z-scores for it (see JUDGING.md, "Known weaknesses of this method").
     """
     criteria = list(
         RubricCriterion.objects.filter(rubric__event=event, rubric__is_active=True)
