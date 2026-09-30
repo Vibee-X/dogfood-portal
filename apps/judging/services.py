@@ -37,6 +37,15 @@ class PairwiseValidationError(ValueError):
     """A requested pair or winner violates pairwise business rules."""
 
 
+class ScoreWriteError(Exception):
+    """A score write was refused; carries the API's error body and HTTP status."""
+
+    def __init__(self, payload, status):
+        super().__init__(payload)
+        self.payload = payload
+        self.status = status
+
+
 def event_role(user, event):
     membership = EventMembership.objects.filter(
         user=user,
@@ -72,6 +81,82 @@ def judge_can_review_submission(judge, event, submission):
     # A judge with no JudgeTrack rows is an event-wide judge. Otherwise a
     # submission must be in one of their explicitly assigned event tracks.
     return not scoped_tracks or submission.track_id in scoped_tracks
+
+
+def save_judge_score(user, assignment_id, criterion_id, raw_value):
+    """Create or update one owned score; the single write path for scores.
+
+    Used by POST/PUT/PATCH /api/judge/scores and the judge scoring page. It
+    checks, in order: both ids given, both rows exist, the caller is an active
+    event judge who owns the assignment and may review it (track scope, no
+    self-review), the criterion is in the assignment's event and its rubric is
+    active, and the value is an integer that passes Score validation
+    (1..max_score). It then updates the assignment status and writes the
+    score.created / score.updated AuditLog entry.
+
+    Returns ``(score, created)``; raises ScoreWriteError(payload, status) with
+    the API's error body and status code.
+    """
+    if not assignment_id or not criterion_id:
+        raise ScoreWriteError({"error": "assignment_id and criterion_id are required."}, 400)
+    assignment = JudgeAssignment.objects.select_related("event", "judge", "submission", "submission__track").filter(
+        pk=assignment_id
+    ).first()
+    criterion = RubricCriterion.objects.select_related("rubric").filter(pk=criterion_id).first()
+    if not assignment or not criterion:
+        raise ScoreWriteError({"error": "Assignment or criterion not found."}, 404)
+    if event_role(user, assignment.event) != EventMembership.Role.JUDGE:
+        raise ScoreWriteError({"error": "Only assigned judges can write scores."}, 403)
+    if assignment.judge_id != user.id:
+        raise ScoreWriteError({"error": "You can only score your own assignment."}, 403)
+    if not judge_can_review_submission(user, assignment.event, assignment.submission):
+        raise ScoreWriteError({"error": "This assignment is outside your permitted track scope."}, 403)
+    if criterion.rubric.event_id != assignment.event_id:
+        raise ScoreWriteError({"error": "Criterion and assignment must belong to the same event."}, 400)
+    if not criterion.rubric.is_active:
+        raise ScoreWriteError({"error": "Criterion belongs to an inactive rubric."}, 400)
+    try:
+        value = int(raw_value)
+    except (TypeError, ValueError):
+        raise ScoreWriteError({"error": "value must be an integer."}, 400)
+
+    score = Score.objects.filter(assignment=assignment, criterion=criterion).first()
+    old_value = score.value if score else None
+    score = score or Score(assignment=assignment, criterion=criterion)
+    score.value = value
+    try:
+        score.full_clean()
+    except Exception as exc:
+        errors = getattr(exc, "message_dict", {"error": exc.messages if hasattr(exc, "messages") else str(exc)})
+        raise ScoreWriteError(errors, 400)
+    created = score.pk is None
+    score.save()
+
+    required_ids = set(RubricCriterion.objects.filter(
+        rubric__event=assignment.event,
+        rubric__is_active=True,
+    ).values_list("pk", flat=True))
+    scored_ids = set(assignment.scores.filter(criterion_id__in=required_ids).values_list("criterion_id", flat=True))
+    assignment.status = (
+        JudgeAssignment.Status.COMPLETED
+        if required_ids and required_ids.issubset(scored_ids)
+        else JudgeAssignment.Status.IN_PROGRESS
+    )
+    assignment.save(update_fields=["status"])
+    AuditLog.objects.create(
+        actor=user,
+        action="score.created" if created else "score.updated",
+        target_type="Score",
+        target_id=str(score.pk),
+        metadata={
+            "event": assignment.event.slug,
+            "assignment_id": assignment.pk,
+            "criterion_id": criterion.pk,
+            "old_value": old_value,
+            "new_value": value,
+        },
+    )
+    return score, created
 
 
 def judge_can_compare_pair(judge, event, submission_a, submission_b):

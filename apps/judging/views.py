@@ -16,7 +16,6 @@ from rest_framework.response import Response
 from drf_spectacular.utils import OpenApiParameter, OpenApiTypes, extend_schema
 
 from apps.accounts.models import EventMembership, User
-from apps.core.models import AuditLog
 from apps.events.models import Event, Track
 from .models import (
     JudgeAssignment,
@@ -25,23 +24,23 @@ from .models import (
     PairwiseComparison,
     Rubric,
     RubricCriterion,
-    Score,
 )
 from .services import (
     AssignmentError,
     PairwisePermissionError,
     PairwiseStateError,
     PairwiseValidationError,
+    ScoreWriteError,
     bradley_terry_ranking,
     event_role,
     generate_assignments,
     generate_pairwise_comparisons,
     is_organizer,
-    judge_can_review_submission,
     judge_progress,
     next_pairwise_comparison,
     record_pairwise_winner,
     run_normalization,
+    save_judge_score,
 )
 
 
@@ -198,75 +197,17 @@ def judge_scores(request):
             ],
         })
 
-    assignment_id = request.data.get("assignment_id")
-    criterion_id = request.data.get("criterion_id")
-    if not assignment_id or not criterion_id:
-        return Response(
-            {"error": "assignment_id and criterion_id are required."},
-            status=http_status.HTTP_400_BAD_REQUEST,
-        )
-    assignment = JudgeAssignment.objects.select_related("event", "judge", "submission", "submission__track").filter(
-        pk=assignment_id
-    ).first()
-    criterion = RubricCriterion.objects.select_related("rubric").filter(pk=criterion_id).first()
-    if not assignment or not criterion:
-        return Response({"error": "Assignment or criterion not found."}, status=http_status.HTTP_404_NOT_FOUND)
-    if event_role(request.user, assignment.event) != EventMembership.Role.JUDGE:
-        return Response({"error": "Only assigned judges can write scores."}, status=http_status.HTTP_403_FORBIDDEN)
-    if assignment.judge_id != request.user.id:
-        return Response({"error": "You can only score your own assignment."}, status=http_status.HTTP_403_FORBIDDEN)
-    if not judge_can_review_submission(request.user, assignment.event, assignment.submission):
-        return Response({"error": "This assignment is outside your permitted track scope."}, status=http_status.HTTP_403_FORBIDDEN)
-    if criterion.rubric.event_id != assignment.event_id:
-        return Response(
-            {"error": "Criterion and assignment must belong to the same event."},
-            status=http_status.HTTP_400_BAD_REQUEST,
-        )
-    if not criterion.rubric.is_active:
-        return Response({"error": "Criterion belongs to an inactive rubric."}, status=http_status.HTTP_400_BAD_REQUEST)
     try:
-        value = int(request.data.get("value"))
-    except (TypeError, ValueError):
-        return Response({"error": "value must be an integer."}, status=http_status.HTTP_400_BAD_REQUEST)
-
-    score = Score.objects.filter(assignment=assignment, criterion=criterion).first()
-    old_value = score.value if score else None
-    score = score or Score(assignment=assignment, criterion=criterion)
-    score.value = value
-    try:
-        score.full_clean()
-    except Exception as exc:
-        errors = getattr(exc, "message_dict", {"error": exc.messages if hasattr(exc, "messages") else str(exc)})
-        return Response(errors, status=http_status.HTTP_400_BAD_REQUEST)
-    created = score.pk is None
-    score.save()
-
-    required_ids = set(RubricCriterion.objects.filter(
-        rubric__event=assignment.event,
-        rubric__is_active=True,
-    ).values_list("pk", flat=True))
-    scored_ids = set(assignment.scores.filter(criterion_id__in=required_ids).values_list("criterion_id", flat=True))
-    assignment.status = (
-        JudgeAssignment.Status.COMPLETED
-        if required_ids and required_ids.issubset(scored_ids)
-        else JudgeAssignment.Status.IN_PROGRESS
-    )
-    assignment.save(update_fields=["status"])
-    AuditLog.objects.create(
-        actor=request.user,
-        action="score.created" if created else "score.updated",
-        target_type="Score",
-        target_id=str(score.pk),
-        metadata={
-            "event": assignment.event.slug,
-            "assignment_id": assignment.pk,
-            "criterion_id": criterion.pk,
-            "old_value": old_value,
-            "new_value": value,
-        },
-    )
+        score, created = save_judge_score(
+            request.user,
+            request.data.get("assignment_id"),
+            request.data.get("criterion_id"),
+            request.data.get("value"),
+        )
+    except ScoreWriteError as exc:
+        return Response(exc.payload, status=exc.status)
     return Response(
-        {"id": score.pk, "assignment_id": assignment.pk, "criterion_id": criterion.pk, "value": score.value},
+        {"id": score.pk, "assignment_id": score.assignment_id, "criterion_id": score.criterion_id, "value": score.value},
         status=http_status.HTTP_201_CREATED if created else http_status.HTTP_200_OK,
     )
 
