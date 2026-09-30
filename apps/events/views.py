@@ -79,12 +79,32 @@ def event_list(request):
         "events": events,
         "status_filter": status_filter,
         "status_filter_label": Event.STATUS_LABELS.get(status_filter, ""),
+        "can_host": can_host_events(request.user),
     })
+
+
+def can_host_events(user):
+    """Staff/superusers, or active organizers/admins of at least one event."""
+    if not user.is_authenticated:
+        return False
+    if user.is_staff or user.is_superuser:
+        return True
+    return EventMembership.objects.filter(
+        user=user,
+        role__in=[EventMembership.Role.ORGANIZER, EventMembership.Role.ADMIN],
+        status=EventMembership.Status.ACTIVE,
+    ).exists()
 
 
 @login_required
 def event_create(request):
-    """Create a new event — any logged-in user becomes organizer."""
+    """Create a new event; the creator becomes its organizer.
+
+    Only users who may host (see can_host_events) can open or submit the
+    form; everyone else gets 403 on GET and POST alike.
+    """
+    if not can_host_events(request.user):
+        return HttpResponseForbidden("Only staff and existing event organizers can host events.")
     if request.method == "POST":
         form = EventForm(request.POST)
         if form.is_valid():

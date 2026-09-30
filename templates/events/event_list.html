@@ -7,7 +7,7 @@
         <h1>Events</h1>
         <p class="page-subtitle">Discover and participate in upcoming hackathons.</p>
     </div>
-    {% if user.is_authenticated %}
+    {% if can_host %}
     <a href="{% url 'events:event_create' %}" class="btn btn-primary">
         {% include "includes/icon.html" with name="plus" size=16 %} Host an event
     </a>

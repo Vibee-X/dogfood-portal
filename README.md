@@ -76,10 +76,14 @@ surface, token header, and server-enforced role restrictions.
 
 - **Authentication**: Signup, login, logout (session-based for browsers, token-based for API)
 - **Per-event roles**: EventMembership(user, event, role) — not global user roles.
-  Any signed-in user can host a new event ("Host an event" on the Events page)
-  and becomes that event's organizer; this grants nothing in any other event,
-  so a participant who hosts their own event is still refused organizer and
-  judge data in `evt_01`.
+  Only staff users and active organizers or admins of at least one event can
+  host a new event. The "Host an event" button is hidden for everyone else,
+  and `/events/create/` returns 403 to them for both GET and POST. Hosting
+  makes you the organizer of that new event only; it grants nothing in any
+  other event. On a fresh install, create the first host with
+  `docker compose exec web python manage.py createsuperuser` (or
+  `python manage.py createsuperuser` without Docker); after seeding, the
+  `organizer` demo account can also host.
 - **Events**: Create, edit with configurable dates (submission deadline, judging window, voting window)
 - **Tracks & Prizes**: Organizer-configurable
 - **Teams**: Create, invite via shareable link, join, leave
@@ -152,8 +156,10 @@ surface, token header, and server-enforced role restrictions.
   Django admin (`/admin/`), and no seeded account can open it (the seed
   creates no staff user; run `python manage.py createsuperuser`, or
   `docker compose exec web python manage.py createsuperuser` in Docker).
-- Any registered account can create and publish an event; there is no
-  setting to restrict hosting to specific users.
+- Hosting rights are all-or-nothing: any staff user, or any active organizer
+  or admin of one event, can create and publish further events. There is no
+  finer-grained setting (for example, a per-user hosting quota or approval
+  step).
 - Duplicate submissions are not detected. The fixture's two "Dry Harbour"
   entries (`prj_07`, `prj_41`) are kept and ranked separately; see
   `JUDGING.md`.

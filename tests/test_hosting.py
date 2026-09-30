@@ -1,47 +1,67 @@
-"""Hosting an event makes you its organizer and nothing more."""
+"""Who may host (create) events: staff, or active organizers/admins of an event."""
 import pytest
 from django.test import Client
-from rest_framework.authtoken.models import Token
-from rest_framework.test import APIClient
 
 from apps.accounts.models import EventMembership, User
 from apps.events.models import Event
 from scripts.seed import seed
 
+NEW_EVENT = {
+    "name": "New Jam",
+    "slug": "new-jam",
+    "voting_access": Event.VotingAccess.PARTICIPANTS,
+    "reviews_per_submission": 3,
+}
 
-@pytest.mark.django_db
-def test_participant_who_hosts_an_event_is_still_refused_in_evt_01(capsys):
+
+def web_for(user):
+    client = Client()
+    client.force_login(user)
+    return client
+
+
+@pytest.fixture
+def seeded(db, capsys):
     seed()
-    capsys.readouterr()  # the seed prints demo tokens; keep them out of the test output
-    participant = User.objects.get(username="participant")
-    web = Client()
-    web.force_login(participant)
-
-    created = web.post("/events/create/", {
-        "name": "Participant Jam",
-        "slug": "participant-jam",
-        "voting_access": Event.VotingAccess.PARTICIPANTS,
-        "reviews_per_submission": 3,
-    })
-    assert created.status_code == 302
-    hosted = Event.objects.get(slug="participant-jam")
-    assert EventMembership.objects.get(user=participant, event=hosted).role == EventMembership.Role.ORGANIZER
-    assert web.get(f"/events/{hosted.slug}/audit/").status_code == 200  # organizer of their own event
-    # Their role in the seeded event is unchanged.
-    assert EventMembership.objects.get(user=participant, event__slug="evt_01").role == EventMembership.Role.PARTICIPANT
-
-    token, _ = Token.objects.get_or_create(user=participant)
-    api = APIClient()
-    api.credentials(HTTP_AUTHORIZATION=f"Token {token.key}")
-    assert api.get("/api/judge/scores", {"event": "evt_01", "judge": "judge_a"}).status_code == 403
-    assert api.get("/api/export.csv", {"event": "evt_01"}).status_code == 403
-    assert web.get("/events/evt_01/audit/").status_code == 403
+    capsys.readouterr()  # the seed prints demo tokens; keep them out of test output
 
 
-@pytest.mark.django_db
-def test_events_page_and_form_explain_hosting():
-    user = User.objects.create_user("host_candidate", password="password123")
-    web = Client()
-    web.force_login(user)
+def test_participant_cannot_host_and_sees_no_button(seeded):
+    web = web_for(User.objects.get(username="participant"))
+    assert web.get("/events/create/").status_code == 403
+    assert web.post("/events/create/", NEW_EVENT).status_code == 403
+    assert not Event.objects.filter(slug=NEW_EVENT["slug"]).exists()
+    assert "Host an event" not in web.get("/events/").content.decode()
+
+
+def test_anonymous_visitors_are_sent_to_login(db):
+    response = Client().get("/events/create/")
+    assert response.status_code == 302
+    assert response["Location"].startswith("/accounts/login/")
+    assert "Host an event" not in Client().get("/events/").content.decode()
+
+
+def test_seeded_organizer_can_host_and_becomes_its_organizer(seeded):
+    organizer = User.objects.get(username="organizer")
+    web = web_for(organizer)
     assert "Host an event" in web.get("/events/").content.decode()
-    assert "It doesn't change your role in any other event." in web.get("/events/create/").content.decode()
+    form = web.get("/events/create/")
+    assert form.status_code == 200
+    assert "It doesn't change your role in any other event." in form.content.decode()
+    created = web.post("/events/create/", NEW_EVENT)
+    assert created.status_code == 302
+    hosted = Event.objects.get(slug=NEW_EVENT["slug"])
+    assert EventMembership.objects.get(user=organizer, event=hosted).role == EventMembership.Role.ORGANIZER
+
+
+def test_staff_user_can_host_but_gains_no_role_in_other_events(seeded):
+    staff = User.objects.create_user("staff_host", password="password123", is_staff=True)
+    web = web_for(staff)
+    assert "Host an event" in web.get("/events/").content.decode()
+    assert web.post("/events/create/", NEW_EVENT).status_code == 302
+    hosted = Event.objects.get(slug=NEW_EVENT["slug"])
+    assert EventMembership.objects.get(user=staff, event=hosted).role == EventMembership.Role.ORGANIZER
+    assert web.get(f"/events/{hosted.slug}/audit/").status_code == 200
+    # Being staff and hosting one event grants nothing in evt_01.
+    assert web.get("/events/evt_01/audit/").status_code == 403
+    assert not EventMembership.objects.filter(user=staff, event__slug="evt_01").exists()
