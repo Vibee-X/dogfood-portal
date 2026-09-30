@@ -107,6 +107,33 @@ surface, token header, and server-enforced role restrictions.
   can reach a boundary with sparse or one-sided evidence.
 - Fixture URLs are preserved as fixture content. The portal does not fetch
   them during startup or normal operation.
+- Several judging steps have no web page and are API-only (documented at
+  `/api/schema/`): rubric scoring (`/api/judge/scores`), rubric and criterion
+  setup (`/api/judging/rubrics`), judge invitations
+  (`/api/judging/judges/invite`), assignment generation
+  (`/api/judging/assignments/generate`), pairwise pair generation
+  (`/api/judging/pairwise/generate`) and normalization runs
+  (`/api/judging/normalization/run`). The web UI covers making pairwise
+  choices and the organizer progress table.
+- There is no results page. Normalized results are available through the
+  organizer/admin CSV export (`/api/export.csv`, which the UI does not link
+  to) and `scripts/normalization_report.py`; community votes through
+  `/api/voting/results`; pairwise rankings through
+  `/api/judging/pairwise/rankings`. A normalization run's API response
+  returns only the run id, not the ranking.
+- The audit log can only be read in Django admin (`/admin/`), and no seeded
+  account can open it: the seed creates no staff or superuser, so the seeded
+  organizer is redirected to the admin login. Create one with
+  `python manage.py createsuperuser` (in Docker:
+  `docker compose exec web python manage.py createsuperuser`). The seed
+  imports fixture scores directly, so they have no audit entries; the trail
+  starts with the first action taken through the app or API.
+- Duplicate submissions are not detected. The fixture's two "Dry Harbour"
+  entries (`prj_07`, `prj_41`) are kept and ranked separately; see
+  `JUDGING.md`.
+- Normalization uses per-judge z-scores, which assume each judge saw a
+  comparable batch of projects. The weaknesses, and what we would do next,
+  are measured on the fixture data in `JUDGING.md`.
 
 ## Project Structure
 
