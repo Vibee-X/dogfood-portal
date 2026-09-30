@@ -9,7 +9,7 @@
     </div>
     {% if user.is_authenticated %}
     <a href="{% url 'events:event_create' %}" class="btn btn-primary">
-        {% include "includes/icon.html" with name="plus" size=16 %} Create Event
+        {% include "includes/icon.html" with name="plus" size=16 %} Host an event
     </a>
     {% endif %}
 </div>

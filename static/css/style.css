@@ -1869,6 +1869,14 @@ body.embed main.container { padding-top: var(--space-lg); }
 .score-fields .form-group { margin: 0; }
 .score-form .btn { align-self: flex-start; }
 
+/* One-line explanation under a form heading */
+.form-note {
+    margin: -0.75rem 0 var(--space-lg);
+    text-align: center;
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+
 /* Certificate (page keeps its own print rules inline) */
 .certificate { padding: 2.5rem 2rem; }
 .certificate h1 {
