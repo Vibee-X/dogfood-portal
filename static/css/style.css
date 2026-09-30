@@ -1646,6 +1646,70 @@ body.embed main.container { padding-top: var(--space-lg); }
 .invite-link code { display: inline-block; margin-right: 0.35rem; }
 .pairwise-project .link-pills { margin-top: var(--space-md); }
 
+/* Audit log */
+.badge-info {
+    color: var(--color-accent);
+    background: var(--color-accent-soft);
+    border-color: var(--color-accent-border);
+}
+.page-title-row {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    flex-wrap: wrap;
+    gap: var(--space-sm) var(--space-md);
+}
+.audit-filter {
+    display: flex;
+    align-items: center;
+    gap: 0.6rem;
+}
+.audit-filter select { min-width: 13rem; }
+.audit-table td { vertical-align: top; font-size: var(--font-size-sm); }
+.audit-time {
+    white-space: nowrap;
+    font-variant-numeric: tabular-nums;
+    color: var(--color-text-secondary);
+}
+.audit-target { white-space: nowrap; }
+.audit-details {
+    display: flex;
+    flex-direction: column;
+    gap: 0.15rem;
+    min-width: 14rem;
+}
+.audit-details div { display: flex; gap: 0.5rem; }
+.audit-details dt {
+    color: var(--color-text-muted);
+    min-width: 6.5rem;
+    flex-shrink: 0;
+}
+.audit-details dd {
+    color: var(--color-text-heading);
+    overflow-wrap: anywhere;
+}
+.pagination {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    gap: var(--space-md);
+    margin-top: var(--space-lg);
+}
+.pagination-status {
+    font-size: var(--font-size-sm);
+    color: var(--color-text-secondary);
+}
+.btn.is-disabled {
+    opacity: 0.45;
+    pointer-events: none;
+}
+.audit-note {
+    margin-top: var(--space-lg);
+    max-width: 60rem;
+    font-size: var(--font-size-xs);
+    color: var(--color-text-muted);
+}
+
 /* Certificate (page keeps its own print rules inline) */
 .certificate { padding: 2.5rem 2rem; }
 .certificate h1 {
@@ -1818,6 +1882,9 @@ main.container > .mt-3 > h1 {
     .track-field { flex: 1 1 auto; }
     .track-field select { min-width: 0; }
     .project-grid { grid-template-columns: 1fr; }
+    .audit-filter { flex-wrap: wrap; }
+    .audit-filter .select-wrap { flex: 1 1 auto; }
+    .audit-filter select { min-width: 0; }
 
     .detail-hero {
         flex-wrap: wrap;

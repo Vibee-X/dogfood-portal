@@ -92,6 +92,7 @@
             <a href="{% url 'events:track_create' event_slug=event.slug %}" class="btn">Add Track</a>
             <a href="{% url 'events:prize_create' event_slug=event.slug %}" class="btn">Add Prize</a>
             <a href="{% url 'judging_web:progress_dashboard' slug=event.slug %}" class="btn">Judge Progress</a>
+            <a href="{% url 'events:event_audit' slug=event.slug %}" class="btn">{% include "includes/icon.html" with name="file-text" size=16 %} Audit Log</a>
             {% if event.is_published %}
             <a href="{% url 'submissions:event_embed_gallery' slug=event.slug %}" class="btn" target="_blank" rel="noopener">Open Embed Gallery</a>
             {% endif %}

@@ -272,6 +272,10 @@ fallback strengths.
 ## Progress and export
 
 Organizers see `/events/<event-slug>/judging/progress/`, an HTMX table polling
-every ten seconds. `/api/judging/progress` and `/api/export.csv` are
+every ten seconds, and `/events/<event-slug>/audit/`, the event's audit trail
+(newest first, filterable by action). Audit entries have no event column, so
+the page scopes them through the foreign keys of the record each entry points
+at, never through the event slug stored in some entries' metadata, which an
+organizer can change. `/api/judging/progress` and `/api/export.csv` are
 organizer/admin-only. The CSV contains submission details, raw criteria, raw
 weighted score, normalized review and project scores, plus per-judge progress.

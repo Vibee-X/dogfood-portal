@@ -84,6 +84,9 @@ surface, token header, and server-enforced role restrictions.
 
 - **Judging integrity**: Event rubrics, scoped judge assignments, own-score
   isolation, audit logging, normalization snapshots, and organizer CSV export.
+- **Audit log page**: Organizers and event admins get a read-only, filterable,
+  paginated audit trail per event at `/events/<event-slug>/audit/`, linked
+  from the event page and the judging progress page.
 - **Pairwise judging**: Deterministic in-scope project pairs, immutable judge
   choices, audit history, and organizer-only component-scoped
   Bradley--Terry rankings.
@@ -121,13 +124,17 @@ surface, token header, and server-enforced role restrictions.
   `/api/voting/results`; pairwise rankings through
   `/api/judging/pairwise/rankings`. A normalization run's API response
   returns only the run id, not the ranking.
-- The audit log can only be read in Django admin (`/admin/`), and no seeded
-  account can open it: the seed creates no staff or superuser, so the seeded
-  organizer is redirected to the admin login. Create one with
-  `python manage.py createsuperuser` (in Docker:
-  `docker compose exec web python manage.py createsuperuser`). The seed
-  imports fixture scores directly, so they have no audit entries; the trail
-  starts with the first action taken through the app or API.
+- The audit trail covers only some actions. Scores, pairwise comparisons,
+  votes, comments and certificates are audited; judge invitations,
+  assignment generation, normalization runs, rubric changes, event edits and
+  project submissions or edits write no audit entries. Organizers read their
+  event's entries at `/events/<event-slug>/audit/`; entries are matched to the
+  event through the record they point at, so an entry whose record was
+  deleted is not shown. The seed imports fixture scores directly, so a fresh
+  install starts with an empty trail. The full cross-event log is only in
+  Django admin (`/admin/`), and no seeded account can open it (the seed
+  creates no staff user; run `python manage.py createsuperuser`, or
+  `docker compose exec web python manage.py createsuperuser` in Docker).
 - Duplicate submissions are not detected. The fixture's two "Dry Harbour"
   entries (`prj_07`, `prj_41`) are kept and ranked separately; see
   `JUDGING.md`.

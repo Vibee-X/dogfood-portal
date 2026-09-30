@@ -1,0 +1,102 @@
+{% extends "base.html" %}
+{% block title %}Audit log — {{ event.name }}{% endblock %}
+{% block content %}
+<div class="audit-page">
+    <a href="{% url 'events:event_detail' slug=event.slug %}" class="back-link">
+        {% include "includes/icon.html" with name="arrow-left" size=16 %} {{ event.name }}
+    </a>
+
+    <div class="page-header">
+        <div class="page-heading">
+            <h1>Audit log</h1>
+            <p class="page-subtitle">
+                {{ page.paginator.count }} entr{{ page.paginator.count|pluralize:"y,ies" }}{% if action %} for <code>{{ action }}</code>{% endif %}
+                &middot; newest first &middot; times in UTC
+            </p>
+        </div>
+        <form method="get" class="audit-filter">
+            <div class="select-wrap">
+                <label for="audit-action" class="sr-only">Filter by action</label>
+                <select class="input" name="action" id="audit-action" onchange="this.form.submit()">
+                    <option value="">All actions</option>
+                    {% for name in actions %}
+                    <option value="{{ name }}"{% if name == action %} selected{% endif %}>{{ name }}</option>
+                    {% endfor %}
+                </select>
+                {% include "includes/icon.html" with name="chevron-down" size=16 %}
+            </div>
+            <button type="submit" class="btn btn-primary">Filter</button>
+        </form>
+    </div>
+
+    <div class="card table-card">
+        <div class="table-scroll">
+            <table class="audit-table">
+                <caption class="sr-only">Audit log entries for {{ event.name }}</caption>
+                <thead>
+                    <tr>
+                        <th scope="col">Time (UTC)</th>
+                        <th scope="col">Actor</th>
+                        <th scope="col">Action</th>
+                        <th scope="col">Target</th>
+                        <th scope="col">Details</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    {% for entry in page.object_list %}
+                    <tr>
+                        <td class="audit-time"><time datetime="{{ entry.created_at|date:'c' }}">{{ entry.created_at|date:"M d, Y H:i:s" }}</time></td>
+                        <td>{{ entry.actor_label }}</td>
+                        <td><span class="badge {{ entry.badge_class }}">{{ entry.action }}</span></td>
+                        <td class="audit-target">{{ entry.target_label }} #{{ entry.target_id }}</td>
+                        <td>
+                            {% if entry.details %}
+                            <dl class="audit-details">
+                                {% for key, value in entry.details %}
+                                <div><dt>{{ key }}</dt><dd>{{ value|default_if_none:"—" }}</dd></div>
+                                {% endfor %}
+                            </dl>
+                            {% else %}
+                            <span class="text-muted">—</span>
+                            {% endif %}
+                        </td>
+                    </tr>
+                    {% empty %}
+                    <tr>
+                        <td colspan="5" class="text-muted">No audit entries{% if action %} for this action{% endif %} yet.</td>
+                    </tr>
+                    {% endfor %}
+                </tbody>
+            </table>
+        </div>
+    </div>
+
+    {% if page.paginator.num_pages > 1 %}
+    <nav class="pagination" aria-label="Audit log pages">
+        {% if page.has_previous %}
+        <a class="btn btn-sm" href="?page={{ page.previous_page_number }}{{ action_query }}" rel="prev">
+            {% include "includes/icon.html" with name="arrow-left" size=14 %} Previous
+        </a>
+        {% else %}
+        <span class="btn btn-sm is-disabled" aria-disabled="true">{% include "includes/icon.html" with name="arrow-left" size=14 %} Previous</span>
+        {% endif %}
+        <span class="pagination-status">Page {{ page.number }} of {{ page.paginator.num_pages }}</span>
+        {% if page.has_next %}
+        <a class="btn btn-sm" href="?page={{ page.next_page_number }}{{ action_query }}" rel="next">
+            Next {% include "includes/icon.html" with name="arrow-right" size=14 %}
+        </a>
+        {% else %}
+        <span class="btn btn-sm is-disabled" aria-disabled="true">Next {% include "includes/icon.html" with name="arrow-right" size=14 %}</span>
+        {% endif %}
+    </nav>
+    {% endif %}
+
+    <p class="audit-note">
+        Recorded actions: rubric scores (created, updated), pairwise comparisons (assigned, completed),
+        community votes, comments (created, edited, hidden, unhidden) and participation certificates.
+        Judge invitations, assignment generation, normalization runs, rubric changes, event edits and
+        project submissions or edits are not audited. Entries are matched to this event through the record they point at; an entry
+        whose record has been deleted is not shown.
+    </p>
+</div>
+{% endblock %}
